@@ -11,7 +11,7 @@ class RelationalDataBase:
         self.add_data(DataUnit()) # Initial db structure to be restructured
 
 
-    def read_input(self, console_mode=True):
+    def read_input(self, console_mode=True): # -> Transfer to indepedent Input class
         if(console_mode):
             input_data_rows = []
             inp = 1
