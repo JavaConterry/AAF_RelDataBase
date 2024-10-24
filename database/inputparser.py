@@ -58,26 +58,36 @@ class InputParser:
 
         self._enter_command_check(enter_command)
 
-        print(enter_command, main_command)
+        # print(enter_command, main_command)
 
         for word_index in range(len(main_command)):
             main_command[word_index] = main_command[word_index].strip()
-            print(main_command[word_index])
             if '"' in main_command[word_index]:
                 word_list = main_command[word_index].split('"')
+                if len(word_list) > 3:
+                    return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, no several quotes "" in table column name ({command[1]})')
+                if word_list[0] != '':
+                    return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, no text before quotes in table column name ({command[1]})')
                 word_list.pop(0)
-            if "'" in main_command[word_index]:
+                word_list[1] = word_list[1].strip()
+            elif "'" in main_command[word_index]:
                 word_list = main_command[word_index].split("'")
+                if len(word_list) > 3:
+                    return self.exception(user_command_str, f"Wrong {enter_command[0]} command syntax, no several quotes '' in table column name ({command[1]})")
+                if word_list[0] != '':
+                    return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, no text before quotes in table column name ({command[1]})')
                 word_list.pop(0)
-            if "'" not in main_command[word_index] and '"' not in main_command[word_index]:
+                word_list[1] = word_list[1].strip()
+            else:
                 word_list = main_command[word_index].split()
-            print(word_list)
             if len(word_list) > 2:
                 return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, no spaces in table column name ({command[1]})')
             if len(word_list) == 2:
-                if word_list[1].lower() != 'indexed':
+                if word_list[1] == '':
+                    pass
+                elif word_list[1].lower() != 'indexed':
                     return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, no spaces in table column name ({command[1]})')
-            if word_list[0].lower() in self.registered_words:
+            if word_list[0].upper() in self.registered_words:
                 return self.exception(user_command_str, "Column name can't be reserved word")
 
         return [enter_command, main_command]
@@ -151,22 +161,25 @@ class InputParser:
         # command = re.sub(r"""[^\w\s(),=><'";]""", '', command)     # remove non-words ^\w\s(),=><
         command = command.split(";")[0]
         command = (re.sub(r"""[^\w\s(),=><'"]""", '', command)).strip()
-        print(command)
+        # print(command)
         command_to_parse = self.dict.get(command.split()[0].lower(), self.exception)
         return command_to_parse(command)
 
 
 if __name__ == "__main__":
     parser = InputParser()
-    # print(parser.parse_input('CREATE students \n (id INDEXED, name, age, sex);'))
-    # print(parser.parse_input('  \n  \t \r   &   CREATE students (id INDEXED, & name, age, sex) & ; & \n  \t \r      '))
-    # (parser.parse_input('  \n  \t \r       CREATE students (id INDEXED, name is shit, age, sex)                  ;       sex              '))
-    (parser.parse_input('CREATE students (id INDEXED, "name is shit" INDEXED, age, sex);'))
-    # (parser.parse_input("""CREATE students ('name "dad"');"""))
-    # (parser.parse_input("CREATE students (id INDEXED, 'name is shit', age, sex);"))
-    # (parser.parse_input('CREATE students (id INDEXED, INDEXED name is shit, age, sex);'))
-    # (parser.parse_input('CREATE students (id INDEXED, name, age, sex;'))
-    # (parser.parse_input('CREATE students id INDEXED, name, age, sex;'))
-    # print(parser.parse_input('INSERT students (Dave, 18, male);'))
-    # print(parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 OR name = Heavy;'))
-    # parser.parse_input('Hello from hell, students;')
+    # print(parser.parse_input('CREATE students \n (id INDEXED, name, age, sex);'))  # check_tabulation #
+    # print(parser.parse_input('  \n  \t \r   &   CREATE students (id INDEXED, & name, age, sex) & ; & \n  \t \r      '))  # check_tabulation_and_wrong_characters #
+    # (parser.parse_input('  \n  \t \r       CREATE students (id INDEXED, name is sheet, age, sex)                  ;       sex              '))  # check_tabulation_and_characters_after_semicolon #
+    # print(parser.parse_input('CREATE students (id INDEXED, "name is sheet", age, sex);'))  # check_quotes #
+    # print(parser.parse_input('CREATE students (id INDEXED, "name is sheet" INDEXED, age, sex);'))  # check_quotes_with_indexed #
+    # (parser.parse_input('CREATE students (id INDEXED, "name is sheet" "name is John", age, sex);'))  # check_double_quotes #
+    # (parser.parse_input("""CREATE students ('name "dad"');"""))  # check_with_different_quotes #
+    # (parser.parse_input("CREATE students (id INDEXED, 'name is sheet', age, sex);"))  # check_single_quotes #
+    # (parser.parse_input('CREATE students (id INDEXED, INDEXED name, age, sex);'))  # check_indexed_in_first_place #
+    # (parser.parse_input('CREATE students (id INDEXED, INDEXED, age, sex);'))  # check_just_indexed #
+    # (parser.parse_input('CREATE students (id INDEXED, name, age, sex;'))  # check_no_closed_brackets #
+    # (parser.parse_input('CREATE students id INDEXED, name, age, sex;'))  # check_no_opened_brackets #
+    # print(parser.parse_input('INSERT students (Dave, 18, male);'))  # check_insert #
+    # print(parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 OR name = Heavy;'))  # check_select #
+    # parser.parse_input('Hello from hell, students;')  # check_wrong #
