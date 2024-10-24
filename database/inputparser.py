@@ -58,9 +58,20 @@ class InputParser:
 
         self._enter_command_check(enter_command)
 
+        print(enter_command, main_command)
+
         for word_index in range(len(main_command)):
-            word_list = main_command[word_index].split()
             main_command[word_index] = main_command[word_index].strip()
+            print(main_command[word_index])
+            if '"' in main_command[word_index]:
+                word_list = main_command[word_index].split('"')
+                word_list.pop(0)
+            if "'" in main_command[word_index]:
+                word_list = main_command[word_index].split("'")
+                word_list.pop(0)
+            if "'" not in main_command[word_index] and '"' not in main_command[word_index]:
+                word_list = main_command[word_index].split()
+            print(word_list)
             if len(word_list) > 2:
                 return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, no spaces in table column name ({command[1]})')
             if len(word_list) == 2:
@@ -132,7 +143,7 @@ class InputParser:
         return request # -> SELECT FROM table_name WHERE [input1, input2, ...]
 
     def exception(self, user_command, explain='No such command'):
-        text = f"[!] Command {user_command} is not supported!\n[?] Explaining: {explain}"
+        text = f'[!] Command "{user_command}" is not supported!\n[?] Explaining: {explain}'
         print(text)
         return text
 
@@ -147,15 +158,15 @@ class InputParser:
 
 if __name__ == "__main__":
     parser = InputParser()
-    print(parser.parse_input('CREATE students \n (id INDEXED, name, age, sex);'))
+    # print(parser.parse_input('CREATE students \n (id INDEXED, name, age, sex);'))
     # print(parser.parse_input('  \n  \t \r   &   CREATE students (id INDEXED, & name, age, sex) & ; & \n  \t \r      '))
     # (parser.parse_input('  \n  \t \r       CREATE students (id INDEXED, name is shit, age, sex)                  ;       sex              '))
-    # (parser.parse_input('CREATE students (id INDEXED, "name is shit", age, sex);'))
+    (parser.parse_input('CREATE students (id INDEXED, "name is shit" INDEXED, age, sex);'))
     # (parser.parse_input("""CREATE students ('name "dad"');"""))
     # (parser.parse_input("CREATE students (id INDEXED, 'name is shit', age, sex);"))
     # (parser.parse_input('CREATE students (id INDEXED, INDEXED name is shit, age, sex);'))
-    # (parser.parse_input('CREATE students (id INDEXED, name is shit, age, sex;'))
-    # (parser.parse_input('CREATE students id INDEXED, name is shit, age, sex;'))
-    print(parser.parse_input('INSERT students (Dave, 18, male);'))
-    print(parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 OR name = Heavy;'))
-    parser.parse_input('Hello from hell, students;')
+    # (parser.parse_input('CREATE students (id INDEXED, name, age, sex;'))
+    # (parser.parse_input('CREATE students id INDEXED, name, age, sex;'))
+    # print(parser.parse_input('INSERT students (Dave, 18, male);'))
+    # print(parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 OR name = Heavy;'))
+    # parser.parse_input('Hello from hell, students;')
