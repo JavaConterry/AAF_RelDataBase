@@ -17,9 +17,9 @@ class Core():
             if main_input == 'exit':
                 break
             # print(main_input)
-            text = parser.parse_input(main_input)
-            print(text)
-            # db.do_command(text)
+            command = parser.parse_input(main_input)
+            # print(command)
+            # db.do_command(command)
             main_input = input()
 
 
