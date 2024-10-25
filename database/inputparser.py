@@ -15,6 +15,12 @@ class InputParser:
             'INSERT'.lower(): self.insert,
             'SELECT'.lower(): self.select
         }
+        self.help_commands = {
+            'HELP': "Show help",
+            'CREATE': "CREATE table_name (column_name [INDEXED] [, ...]);",
+            'INSERT': "INSERT [INTO] table_name (“value” [, ...]);",
+            'SELECT': "SELECT FROM table_name [WHERE condition];"
+        }
         self.registered_words = ['CREATE', 'INDEXED', 'INSERT', 'INTO', 'SELECT', 'FROM', 'WHERE']
 
     def _count_brackets(self, user_command):
@@ -61,9 +67,18 @@ class InputParser:
         return word_list
 
     def help(self, user_command):
-        print('CREATE table_name (column_name [INDEXED] [, ...]);')
-        print('INSERT [INTO] table_name ("value" [, ...]);')
-        print('SELECT FROM table_name')
+        help_command = user_command.split()
+        if len(help_command) > 2:
+            return self.exception(user_command, 'Wrong HELP command, too many arguments')
+        if help_command[0].lower() == 'help' and len(help_command) == 1:
+            print('Help commands:')
+            print(*self.help_commands.items(), sep='\n')
+        else:
+            help_command_info = self.help_commands.get(help_command[1].upper(), None)
+            if help_command_info is not None:
+                print(help_command_info)
+            else:
+                self.exception(user_command, 'No such command')
         return user_command
 
     def create(self, user_command):
@@ -121,40 +136,43 @@ class InputParser:
         return [enter_command, main_command]
 
     def select(self, user_command):
-        user_command_str = re.sub(r'[(),]', '', user_command)
-        user_command = user_command_str.split()
+        user_command_str = user_command
+        list_of_commands = user_command.split()
 
-        request = ['SELECT', 'FROM']
+        if len(list_of_commands) > 3 and list_of_commands[3].lower() != 'where':
+            return self.exception(user_command_str, f'Wrong SELECT command syntax')
+        if len(list_of_commands) <= 2:
+            return self.exception(user_command_str, f'Wrong {user_command} command syntax')
+        if len(list_of_commands) == 3:
+            if list_of_commands[0].lower() != 'select' or list_of_commands[1].lower() != 'from' or list_of_commands[2].upper() in self.registered_words:
+                return self.exception(user_command_str, f'Wrong SELECT command syntax')
 
-        table_name = user_command[2]
-        if table_name in self.registered_words:
-            return self.exception(user_command_str, "Table name can't be reserved word")
-        request.append(table_name)
-        # request.append("WHERE")
-        request.append([])
-
-        conditions = user_command[4:]
-        length = len(conditions)
+        enter_command, main_command = list_of_commands[:3], list_of_commands[4:]
 
         count_for_main_operators = 0
         main_operators = []
-
-        conditions_without_and_or = user_command[4:]
-        for word in conditions_without_and_or:
+        for word in main_command:
             if word.lower() == 'and' or word.lower() == 'or':
                 main_operators.append(word.upper())
                 count_for_main_operators += 1
-                conditions_without_and_or.remove(word)
+                main_command.remove(word)
 
-        for word_index in range(len(conditions_without_and_or)//(count_for_main_operators+1)):
-            request[-1].append([[conditions_without_and_or[3*word_index], conditions_without_and_or[3*word_index + 2]], conditions_without_and_or[3*word_index + 1]])
-            if word_index != len(conditions_without_and_or)//(count_for_main_operators+1) - 1:
-                request[-1].append(main_operators.pop(0))
+        length = len(main_command)
+        if (length % (count_for_main_operators + 1)) != 0:
+            return self.exception(user_command_str, f'Wrong conditions in SELECT command')
 
-        if (len(conditions_without_and_or) % (count_for_main_operators + 1)) != 0:
-            return self.exception(user_command_str, f"Wrong conditions in SELECT command, length: {length}, AND or OR operators: {count_for_main_operators}")
+        conditions = []
+        pairs_length = length//(count_for_main_operators+1)
+        for word_index in range(pairs_length):
+            conditions.append([[main_command[3*word_index], main_command[3*word_index + 2]], main_command[3*word_index + 1]])
+            if word_index != pairs_length - 1:
+                conditions.append(main_operators.pop(0))
+        if main_operators:
+            return self.exception(user_command_str, f'Wrong conditions in SELECT command, no continuation for {main_operators[0]} operator')
 
-        return request # -> SELECT FROM table_name WHERE [input1, input2, ...]
+        main_command = conditions
+
+        return [enter_command, main_command]
 
     def exception(self, user_command, explain='No such command'):
         text = f'[!] Command "{user_command}" is not supported!\n[?] Explaining: {explain}'
@@ -186,5 +204,10 @@ if __name__ == "__main__":
     # print(parser.parse_input('INSERT INTO students (Dave, 18, male);'))  # check_insert_into #
     # (parser.parse_input('INSERT students (Dave Dave, 18, male);'))  # check_insert_with_spaces #
     # print(parser.parse_input('INSERT students ("Dave Dave", 18, male);'))  # check_insert_with_quotes #
-    # print(parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 OR name = Heavy;'))  # check_select #
+    # print(parser.parse_input('SELECT FROM students;'))  # check_select #
+    # (parser.parse_input('SELECT dad students;'))  # check_select #
+    # print(parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 OR name = Heavy;'))  # check_select_where #
+    # (parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 AND;'))  # check_select_wrong #
+    # (parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 AND name;'))  # check_select_wrong #
+    # (parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 AND name =;'))  # check_select_wrong #
     # parser.parse_input('Hello from hell, students;')  # check_wrong #
