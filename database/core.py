@@ -1,10 +1,10 @@
 from inputparser import InputParser
-# from db import RelationalDataBase
+from db import DataBase
 
 
 class Core():
-    def __init__(self):  # , db: 'RelationalDataBase'
-        # self.db = db
+    def __init__(self):
+        db = DataBase()
         parser = InputParser()
         main_input = input()
         while main_input != 'exit' and main_input != '':
@@ -16,10 +16,13 @@ class Core():
                     break
             if main_input == 'exit':
                 break
-            # print(main_input)
+
+            # command pipeline
             command = parser.parse_input(main_input)
-            # print(command)
-            # db.do_command(command)
+            response = db.do(command)
+
+            print(response)
+            
             main_input = input()
 
 
