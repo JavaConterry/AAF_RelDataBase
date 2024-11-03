@@ -41,7 +41,8 @@ class InputParser:
 
     def _enter_command_check(self, enter_command, command_str, second_argument=None):
         length = len(enter_command)
-        # print(enter_command)
+        if re.sub(r"""[^a-zA-Z][^a-zA-Z0-9_]*""", '', "".join(enter_command)) != "".join(enter_command):
+            return self.exception(command_str, f'Wrong Identifier name in {enter_command[0]} command, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in {re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', "".join(enter_command))}')
         match length:
             case 1:
                 return self.exception(command_str, f'There is no table name in {enter_command[0]} command')
@@ -167,15 +168,21 @@ class InputParser:
         user_command_str = user_command
         list_of_commands = user_command.split()
 
-        if len(list_of_commands) > 3 and list_of_commands[3].lower() != 'where':
-            return self.exception(user_command_str, f'Wrong SELECT command syntax')
-        if len(list_of_commands) <= 2:
-            return self.exception(user_command_str, f'Wrong {user_command} command syntax')
-        if len(list_of_commands) == 3:
+        if len(list_of_commands) > 3:
+            if list_of_commands[3].lower() != 'where':
+                return self.exception(user_command_str, f'Wrong SELECT command syntax, expected {self.help_commands["SELECT"]}')
+            if len(list_of_commands) < 5:
+                return self.exception(user_command_str, f'There is no WHERE condition in SELECT command')
+        elif len(list_of_commands) <= 2:
+            return self.exception(user_command_str, f'Wrong {user_command} command syntax, expected {self.help_commands["SELECT"]}')
+        elif len(list_of_commands) == 3:
             if list_of_commands[0].lower() != 'select' or list_of_commands[1].lower() != 'from' or list_of_commands[2].upper() in self.registered_words:
                 return self.exception(user_command_str, f'Wrong SELECT command syntax')
 
         enter_command, main_command = list_of_commands[:3], list_of_commands[4:]
+
+        if re.sub(r"""[^a-zA-Z][^a-zA-Z0-9_]*""", '', "".join(enter_command)) != "".join(enter_command):
+            return self.exception(user_command_str, f'Wrong Identifier name in {enter_command[0]} command, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in {re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', "".join(enter_command))}')
 
         count_for_main_operators = 0
         main_operators = []
@@ -212,14 +219,3 @@ class InputParser:
         # command = (re.sub(r"""[^\w\s(),=><'"]""", '', command)).strip() # remove non-words ^\w\s(),=><
         command_to_parse = self.dict.get(command.split()[0].lower(), self.exception)
         return command_to_parse(command)
-
-
-if __name__ == "__main__":
-    parser = InputParser()
-    # print(parser.parse_input('CREATE students (id INDEXED, name, age, sex) & ;'))
-    # (parser.parse_input('SELECT dad students;'))  # check_select #
-    # print(parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 OR name = Heavy;'))  # check_select_where #
-    # (parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 AND;'))  # check_select_wrong #
-    # (parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 AND name;'))  # check_select_wrong #
-    # (parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 AND name =;'))  # check_select_wrong #
-    # parser.parse_input('Hello from hell, students;')  # check_wrong #
