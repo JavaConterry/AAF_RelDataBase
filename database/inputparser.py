@@ -24,26 +24,44 @@ class InputParser:
         self.registered_words = ['CREATE', 'INDEXED', 'INSERT', 'INTO', 'SELECT', 'FROM', 'WHERE']
 
     def _count_brackets(self, user_command):
+        command_name = user_command.split()[0].upper()
         count_for_brackets = {'(': user_command.count('('), ')': user_command.count(')')}
         bracket_open = count_for_brackets['(']
         bracket_close = count_for_brackets[')']
+        if bracket_close == 1 and user_command.split(')')[1] != '':
+            return self.exception(user_command, f'There is text after ")" in {command_name} command')
         if bracket_open == 0:
-            return self.exception(user_command, 'There is no "(" in CREATE command')
+            return self.exception(user_command, f'There is no "(" in {command_name} command')
         elif bracket_open != 1:
-            return self.exception(user_command, f'There is {bracket_open} "(" in CREATE command')
+            return self.exception(user_command, f'There is {bracket_open} "(" in {command_name} command')
         if bracket_close == 0:
-            return self.exception(user_command, 'There is no ")" in CREATE command')
+            return self.exception(user_command, f'There is no ")" in {command_name} command')
         elif bracket_close != 1:
-            return self.exception(user_command, f'There is {bracket_close} ")" in CREATE command')
+            return self.exception(user_command, f'There is {bracket_close} ")" in {command_name} command')
 
-    def _enter_command_check(self, enter_command, second_argument=None):
-        if len(enter_command) == 1:
-            return self.exception(enter_command, f'There is no table name in {enter_command[0]} command')
-        if len(enter_command) >= 3:
-            if second_argument is None:
-                return self.exception(enter_command, f'Wrong {enter_command[0]} command syntax')
-            elif enter_command[1].lower() != second_argument.lower():
-                return self.exception(enter_command, f'Wrong {enter_command[0]} command syntax')
+    def _enter_command_check(self, enter_command, command_str, second_argument=None):
+        length = len(enter_command)
+        if re.sub(r"""[^a-zA-Z][^a-zA-Z0-9_]*""", '', "".join(enter_command)) != "".join(enter_command):
+            return self.exception(command_str, f'Wrong Identifier name in {enter_command[0]} command, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in {re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', "".join(enter_command))}')
+        match length:
+            case 1:
+                return self.exception(command_str, f'There is no table name in {enter_command[0]} command')
+            case 2:
+                if enter_command[1].upper() in self.registered_words and enter_command[1].upper() != second_argument:
+                    return self.exception(command_str, f"Table name can't be reserved word")
+                if enter_command[1].upper() == second_argument:
+                    return self.exception(command_str, f'There is no table name in {enter_command[0]} command')
+                return None
+            case 3:
+                if second_argument is None:
+                    return self.exception(command_str, f'Too many arguments in {enter_command[0]} command')
+                if enter_command[1].upper() != second_argument:
+                    return self.exception(command_str, f'Wrong {enter_command[0]} command syntax')
+                if enter_command[2].upper() in self.registered_words:
+                    return self.exception(command_str, f"Table name can't be reserved word")
+                return None
+            case _:
+                return self.exception(command_str, f'Too many arguments in {enter_command[0]} command')
 
     def _check_for_quotes(self, main_command, word_index, user_command_str, enter_command, command):
         if '"' in main_command[word_index]:
@@ -92,11 +110,16 @@ class InputParser:
         command = user_command[:-1].split('(')
         enter_command, main_command = command[0].split(), command[1].split(',')
 
-        self._enter_command_check(enter_command)
+        check_enter_command = self._enter_command_check(enter_command, user_command_str)
+
+        if check_enter_command is not None:
+            return check_enter_command
 
         for word_index in range(len(main_command)):
             main_command[word_index] = main_command[word_index].strip()
             word_list = self._check_for_quotes(main_command, word_index, user_command_str, enter_command, command)
+            if '[!]' in word_list:
+                return word_list
             if len(word_list) > 2:
                 return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, no spaces in table column name ({command[1]})')
             if len(word_list) == 2:
@@ -120,7 +143,13 @@ class InputParser:
         command = user_command[:-1].split('(')
         enter_command, main_command = command[0].split(), command[1].split(',')
 
-        self._enter_command_check(enter_command, 'INTO')
+        check_enter_command = self._enter_command_check(enter_command, user_command_str, 'INTO')
+
+        if check_enter_command is not None:
+            return check_enter_command
+
+        if len(enter_command) == 3:
+            enter_command.pop(1)
 
         for word_index in range(len(main_command)):
             main_command[word_index] = main_command[word_index].strip()
@@ -139,15 +168,21 @@ class InputParser:
         user_command_str = user_command
         list_of_commands = user_command.split()
 
-        if len(list_of_commands) > 3 and list_of_commands[3].lower() != 'where':
-            return self.exception(user_command_str, f'Wrong SELECT command syntax')
-        if len(list_of_commands) <= 2:
-            return self.exception(user_command_str, f'Wrong {user_command} command syntax')
-        if len(list_of_commands) == 3:
+        if len(list_of_commands) > 3:
+            if list_of_commands[3].lower() != 'where':
+                return self.exception(user_command_str, f'Wrong SELECT command syntax, expected {self.help_commands["SELECT"]}')
+            if len(list_of_commands) < 5:
+                return self.exception(user_command_str, f'There is no WHERE condition in SELECT command')
+        elif len(list_of_commands) <= 2:
+            return self.exception(user_command_str, f'Wrong {user_command} command syntax, expected {self.help_commands["SELECT"]}')
+        elif len(list_of_commands) == 3:
             if list_of_commands[0].lower() != 'select' or list_of_commands[1].lower() != 'from' or list_of_commands[2].upper() in self.registered_words:
                 return self.exception(user_command_str, f'Wrong SELECT command syntax')
 
         enter_command, main_command = list_of_commands[:3], list_of_commands[4:]
+
+        if re.sub(r"""[^a-zA-Z][^a-zA-Z0-9_]*""", '', "".join(enter_command)) != "".join(enter_command):
+            return self.exception(user_command_str, f'Wrong Identifier name in {enter_command[0]} command, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in {re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', "".join(enter_command))}')
 
         count_for_main_operators = 0
         main_operators = []
@@ -180,34 +215,7 @@ class InputParser:
         return text
 
     def parse_input(self, command):
-        command = command.split(";")[0]
-        command = (re.sub(r"""[^\w\s(),=><'"]""", '', command)).strip() # remove non-words ^\w\s(),=><
+        command = command.split(";")[0].strip()
+        # command = (re.sub(r"""[^\w\s(),=><'"]""", '', command)).strip() # remove non-words ^\w\s(),=><
         command_to_parse = self.dict.get(command.split()[0].lower(), self.exception)
         return command_to_parse(command)
-
-
-if __name__ == "__main__":
-    parser = InputParser()
-    # print(parser.parse_input('CREATE students \n (id INDEXED, name, age, sex);'))  # check_tabulation #
-    # print(parser.parse_input('  \n  \t \r   &   CREATE students (id INDEXED, & name, age, sex) & ; & \n  \t \r      '))  # check_tabulation_and_wrong_characters #
-    # (parser.parse_input('  \n  \t \r       CREATE students (id INDEXED, name is sheet, age, sex)                  ;       sex              '))  # check_tabulation_and_characters_after_semicolon #
-    # print(parser.parse_input('CREATE students (id INDEXED, "name is sheet", age, sex);'))  # check_quotes #
-    # print(parser.parse_input('CREATE students (id INDEXED, "name is sheet" INDEXED, age, sex);'))  # check_quotes_with_indexed #
-    # (parser.parse_input('CREATE students (id INDEXED, "name is sheet" "name is John", age, sex);'))  # check_several_quotes #
-    # (parser.parse_input("""CREATE students ('name "dad"');"""))  # check_with_different_quotes #
-    # print(parser.parse_input("CREATE students (id INDEXED, 'name is sheet', age, sex);"))  # check_single_quotes #
-    # (parser.parse_input('CREATE students (id INDEXED, INDEXED name, age, sex);'))  # check_indexed_in_first_place #
-    # (parser.parse_input('CREATE students (id INDEXED, INDEXED, age, sex);'))  # check_just_indexed #
-    # (parser.parse_input('CREATE students (id INDEXED, name, age, sex;'))  # check_no_closed_brackets #
-    # (parser.parse_input('CREATE students id INDEXED, name, age, sex;'))  # check_no_opened_brackets #
-    # print(parser.parse_input('INSERT students (Dave, 18, male);'))  # check_insert #
-    # print(parser.parse_input('INSERT INTO students (Dave, 18, male);'))  # check_insert_into #
-    # (parser.parse_input('INSERT students (Dave Dave, 18, male);'))  # check_insert_with_spaces #
-    # print(parser.parse_input('INSERT students ("Dave Dave", 18, male);'))  # check_insert_with_quotes #
-    # print(parser.parse_input('SELECT FROM students;'))  # check_select #
-    # (parser.parse_input('SELECT dad students;'))  # check_select #
-    # print(parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 OR name = Heavy;'))  # check_select_where #
-    # (parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 AND;'))  # check_select_wrong #
-    # (parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 AND name;'))  # check_select_wrong #
-    # (parser.parse_input('SELECT FROM students WHERE name = Dave AND age < 10 AND name =;'))  # check_select_wrong #
-    # parser.parse_input('Hello from hell, students;')  # check_wrong #
