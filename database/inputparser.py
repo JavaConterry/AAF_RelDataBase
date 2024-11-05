@@ -151,9 +151,10 @@ class InputParser:
         user_command_str = user_command
 
         command = user_command[:-1].split('(')
-        enter_command, main_command = command[0].split(), command[1].split(',')
+        enter_command, raw_main_command = command[0].split(), command[1].split(',')
 
         check_enter_command = self._enter_command_check(enter_command, user_command_str, 'INTO')
+        enter_command[0] = enter_command[0].upper()  # TC: O(n), SC: O(n)?, n = len(enter_command)
 
         if check_enter_command is not None:
             return check_enter_command
@@ -161,16 +162,25 @@ class InputParser:
         if len(enter_command) == 3:
             enter_command.pop(1)
 
-        for word_index in range(len(main_command)):
-            main_command[word_index] = main_command[word_index].strip()
-            word_list = self._check_for_quotes(main_command, word_index, user_command_str, enter_command, command)
-            if len(word_list) >= 2:
-                if word_list[1] == '':
-                    word_list.pop()
-                else:
-                    return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, no spaces in table column name ({command[1]})')
-            if word_list[0].upper() in self.registered_words:
-                return self.exception(user_command_str, "Column name can't be reserved word")
+        wrong_characters_in_table_name = re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', enter_command[-1])
+        if wrong_characters_in_table_name != '':
+            return self.exception(user_command_str, f'Wrong Identifier name in: {enter_command[-1]}, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: {wrong_characters_in_table_name}')
+
+        main_command = []
+
+        for column_name in raw_main_command:
+            double_quotes = column_name.count('"')
+            # single_quotes = column_name.count("'")  # TODO: try to implement single quotes
+            column_name = column_name.strip()
+            if double_quotes > 2 or double_quotes < 2:
+                return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, {['too many', 'too few quotes'][double_quotes < 2]} in table column name: {column_name}')
+            words = column_name.split('"')
+            if words[0] != '':
+                return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, there is a text before quotes in table column value: {column_name}')
+            if words[-1] != '':
+                return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, there is a text after quotes in table column value: {column_name}')
+            # print(words)
+            main_command.append(words[1])
 
         return [enter_command, main_command]
 
@@ -233,7 +243,13 @@ class InputParser:
 
 if __name__ == '__main__':
     parser = InputParser()
-    print(parser.parse_input("CREAte cats(id INDEXED, name INDEXED, favourite_food);"))
+    # # print(parser.parse_input('INSERT INTO cats (1, Murzik, Sausages);'))
+    # # print(parser.parse_input('INSERT INTO cats ("1", dad"Murzik", "Sausages");'))
+    # # print(parser.parse_input('INSERT INTO cats ("1", "Murzik"dad, "Sausages");'))
+    # # print(parser.parse_input('INSERT INTO cats ("1", "Murzik", "Sausages");'))
+    # print(parser.parse_input('INSERT cats ("2", "Fish");'))
+    # print(parser.parse_input("CREAte cats(id INDEXED, name INDEXED, favourite_food);"))
     # print(parser.parse_input("SELECT FROM students WHERE name = Dave"))
     # print(parser.parse_input("SELECT FROM Customers WHERE Country = 'Mexico'; "))
-    # print(parser.parse_input('SELECT FROM cats WHERE name < "Murzik" OR name = "Pushok";'))
+    # print(parser.parse_input('SELECT FROM cats WHERE (name < “Murzik”) OR (name = “Pushok”);'))
+# 

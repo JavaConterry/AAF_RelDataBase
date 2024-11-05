@@ -143,16 +143,11 @@ class InputParserTest(unittest.TestCase):
     ### INSERT ###
 
     def test_insert(self):  # Accepted
-        self.assertEqual(self.parser.parse_input('INSERT students (1, Dave, 18, male);'), [["INSERT", "students"], ['1', "Dave", "18", "male"]])
+        self.assertEqual(self.parser.parse_input('INSERT INTO cats ("1", "Murzik", "Sausages");'), [["INSERT", "cats"], ['1', "Murzik", "Sausages"]])
+        # self.assertEqual(self.parser.parse_input('INSERT students (1, Dave, 18, male);'), [["INSERT", "students"], ['1', "Dave", "18", "male"]])
 
     def test_insert_tabulation(self):  # Accepted
-        self.assertEqual(self.parser.parse_input('Insert students  \n\t\r (id, name, age, sex);'), [["INSERT", "students"], ["id", "name", "age", "sex"]])
-
-    def test_insert_reserved_word_column(self):
-        f = io.StringIO()
-        with redirect_stdout(f) as stdout:
-            self.parser.parse_input('INSERT students (id, INDEXED, age, sex);')
-        self.assertEqual(stdout.getvalue(), """[!] Command "INSERT students (id, INDEXED, age, sex)" is not supported!\n[?] Explaining: Column name can't be reserved word\n""")
+        self.assertEqual(self.parser.parse_input('INSERT INTO cats \n\t\r ("1", "Murzik", "Sausages")\n\t\r ;\n\t\r '), [["INSERT", "cats"], ['1', "Murzik", "Sausages"]])
 
     def test_insert_reserved_word_table_name(self):
         f = io.StringIO()
@@ -172,20 +167,17 @@ class InputParserTest(unittest.TestCase):
             self.parser.parse_input('INSERT INTO INDEXED (id, name, age, sex);')
         self.assertEqual(stdout.getvalue(), """[!] Command "INSERT INTO INDEXED (id, name, age, sex)" is not supported!\n[?] Explaining: Table name can't be reserved word\n""")
 
-    def test_insert_with_column_spaces(self):
+    def test_insert_without_quotes(self):
         f = io.StringIO()
         with redirect_stdout(f) as stdout:
             self.parser.parse_input('INSERT students (Dave Dave, 18, male);')
-        self.assertEqual(stdout.getvalue(), """[!] Command "INSERT students (Dave Dave, 18, male)" is not supported!\n[?] Explaining: Wrong INSERT command syntax, no spaces in table column name (Dave Dave, 18, male)\n""")
+        self.assertEqual(stdout.getvalue(), """[!] Command "INSERT students (Dave Dave, 18, male)" is not supported!\n[?] Explaining: Wrong INSERT command syntax, too few quotes in table column name: Dave Dave\n""")
 
     def test_insert_with_quotes_in_table_name(self):
         f = io.StringIO()
         with redirect_stdout(f) as stdout:
             self.parser.parse_input('INSERT "students" (id, name, age, sex);')
         self.assertEqual(stdout.getvalue(), """[!] Command "INSERT "students" (id, name, age, sex)" is not supported!\n[?] Explaining: Wrong Identifier name in INSERT command, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in ""\n""")
-
-    def test_insert_with_quotes_in_column(self):  # Accepted
-        self.assertEqual(self.parser.parse_input('INSERT students ("Dave Dave", 18, male);'), [["INSERT", "students"], ['"Dave Dave"', "18", "male"]])
 
     ### SELECT ###
 
