@@ -19,14 +19,16 @@ class Table:
                 key = data[col]
                 self.column_trees[i].insert(key, data)
 
-    def search(self, column, key):
+    def search(self, column, key, operator='='):
         if(column in self.indexed_columns):
             tree_idx = self.indexed_columns.index(column)
-            return self.column_trees[tree_idx].search(key)
+            return self.column_trees[tree_idx].search(key, operator)
         else:
-            return [data_unit for data_unit in self.data if key in data_unit]
-
-
+            match(operator):
+                case '=': return [data_unit for data_unit in self.data if key in data_unit]
+                case '<': return [data_unit for data_unit in self.data if data_unit[self.columns.index(column)]<key]
+                case '>': return [data_unit for data_unit in self.data if data_unit[self.columns.index(column)]>key]
+                case _ : return
 
 
 class DataBase:
@@ -50,13 +52,14 @@ class DataBase:
             return 'COMMAND IS EXECUTED'
         
         elif(user_command[0][0]=="SELECT"):
-            table = self._findtable(user_command[0][2])
+            table = self._findtable(user_command[0][1])
             if(table is None):
                 return 'TABLE NOT FOUND'
             else:
                 # TODO : currently only temporary solution for complexity 1
+                # Requires update when Parser structure is decided and recursion is required
                 if(len(user_command)>1):
-                    return table.search('age', '34')
+                    return table.search(user_command[1][0], user_command[1][1], user_command[1][2])
                 return f'TABLE_NAME: {table.table_name}\nTABLE_ARGUMENTS: {table.columns}\nTABLE_INDEXED_COLS: {table.indexed_columns}\nTABLE_DATA:\n{table.data}'
                 
         elif(user_command[0][0]=='INSERT'):

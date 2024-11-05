@@ -13,21 +13,67 @@ class BTreeIndex:
         self.root = BTreeNode(degree)
         self.degree = degree
     
-    def search(self, key, node=None):
-        if node is None:
-            node = self.root
+    # def search(self, key, node=None):
+    #     if node is None:
+    #         node = self.root
 
+    #     i = 0
+    #     while i < len(node.keys) and key > node.keys[i][0]:
+    #         i += 1
+
+    #     if i < len(node.keys) and node.keys[i][0] == key:
+    #         return node.keys[i][1]
+
+    #     if node.is_leaf:
+    #         return None
+
+    #     return self.search(key, node.children[i])
+
+
+    def search(self, key, operator="="):
+        results = []
+        if operator == "=":
+            self._search_exact(self.root, key, results)
+        elif operator == "<":
+            self._search_less_than(self.root, key, results)
+        elif operator == ">":
+            self._search_greater_than(self.root, key, results)
+        return results
+
+    def _search_exact(self, node, key, results):
         i = 0
         while i < len(node.keys) and key > node.keys[i][0]:
             i += 1
 
         if i < len(node.keys) and node.keys[i][0] == key:
-            return node.keys[i][1]
+            results.append(node.keys[i][1])
 
-        if node.is_leaf:
-            return None
+        if not node.is_leaf:
+            self._search_exact(node.children[i], key, results)
 
-        return self.search(key, node.children[i])
+    def _search_less_than(self, node, key, results):
+        i = 0
+        while i < len(node.keys) and node.keys[i][0] < key:
+            results.append(node.keys[i][1])
+            i += 1
+
+        if not node.is_leaf:
+            for j in range(i + 1):
+                self._search_less_than(node.children[j], key, results)
+
+    def _search_greater_than(self, node, key, results):
+        i = 0
+        while i < len(node.keys):
+            if node.keys[i][0] > key:
+                results.append(node.keys[i][1])
+                if not node.is_leaf:
+                    self._search_greater_than(node.children[i], key, results)
+                i += 1
+            else:
+                i += 1
+
+        if not node.is_leaf and node.keys[-1][0] <= key:
+            self._search_greater_than(node.children[-1], key, results)
 
     def insert(self, key, data):
         root = self.root
