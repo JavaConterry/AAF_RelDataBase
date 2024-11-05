@@ -21,11 +21,11 @@ class Core():
             command = parser.parse_input(main_input)
             response = db.do(command)
 
+            #temporal response output
             print(response)
             
             main_input = input()
 
 
 if __name__ == "__main__":
-    # db = RelationalDataBase()
-    core = Core()  # (db)
+    core = Core()
