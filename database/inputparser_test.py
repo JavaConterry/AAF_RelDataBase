@@ -21,11 +21,16 @@ class InputParserTest(unittest.TestCase):
             self.parser.parse_input('&   CREATE students (id INDEXED, name, age, sex);')
         self.assertEqual(stdout.getvalue(), """[!] Command "&   CREATE students (id INDEXED, name, age, sex)" is not supported!\n[?] Explaining: No such command\n""")
 
+    ### CREATE ###
+
     def test_create(self):  # Accepted
-        self.assertEqual(self.parser.parse_input('CREATE students (id INDEXED, name, age, sex);'), [["CREATE", "students"], ["id INDEXED", "name", "age", "sex"]])
+        self.assertEqual(self.parser.parse_input('CREATE students (id INDEXED, name, age, sex);'), [["CREATE", "students"], [['id', True], ['name', False], ['age', False], ['sex', False]]])
 
     def test_create_tabulation(self):  # Accepted
-        self.assertEqual(self.parser.parse_input('CREATE students  \n\t\r (id INDEXED, name, age, sex);'), [["CREATE", "students"], ["id INDEXED", "name", "age", "sex"]])
+        self.assertEqual(self.parser.parse_input('CREATE students  \n\t\r (id INDEXED, name, age, sex)\n\t\r ; \n\t\r '), [["CREATE", "students"], [['id', True], ['name', False], ['age', False], ['sex', False]]])
+
+    def test_create_ignore_characters_after_semicolon(self):  # Accepted
+        self.assertEqual(self.parser.parse_input('CREATE students (id INDEXED, name, age, sex); ;'), [["CREATE", "students"], [['id', True], ['name', False], ['age', False], ['sex', False]]])
 
     def test_create_reserved_word_column(self):
         f = io.StringIO()
@@ -57,8 +62,11 @@ class InputParserTest(unittest.TestCase):
             self.parser.parse_input('CREATE ();')
         self.assertEqual(stdout.getvalue(), """[!] Command "CREATE ()" is not supported!\n[?] Explaining: There is no table name in CREATE command\n""")
 
-    def test_create_not_standard_character_in_column_name(self):  # Accepted
-        self.assertEqual(self.parser.parse_input('CREATE students (id INDEXED, &name, age, sex);'), [["CREATE", "students"], ["id INDEXED", "&name", "age", "sex"]])
+    def test_create_not_standard_character_in_column_name(self):
+        f = io.StringIO()
+        with redirect_stdout(f) as stdout:
+            self.parser.parse_input('CREATE students (id INDEXED, &name, age, sex);')
+        self.assertEqual(stdout.getvalue(), """[!] Command "CREATE students (id INDEXED, &name, age, sex)" is not supported!\n[?] Explaining: Wrong Identifier name in: &name, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: &\n""")
 
     def test_create_non_ascii_character_in_table_name(self):
         f = io.StringIO()
@@ -66,8 +74,11 @@ class InputParserTest(unittest.TestCase):
             self.parser.parse_input('CREATE \05students (id INDEXED, name, age, sex);')
         self.assertEqual(stdout.getvalue(), """[!] Command "CREATE \05students (id INDEXED, name, age, sex)" is not supported!\n[?] Explaining: Wrong Identifier name in CREATE command, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in \05\n""")
 
-    def test_create_non_ascii_character_in_column_name(self):  # Accepted
-        self.assertEqual(self.parser.parse_input('CREATE students (id INDEXED, \05name, age, sex);'), [["CREATE", "students"], ["id INDEXED", "\05name", "age", "sex"]])
+    def test_create_non_ascii_character_in_column_name(self):
+        f = io.StringIO()
+        with redirect_stdout(f) as stdout:
+            self.parser.parse_input('CREATE students (id INDEXED, \05name, age, sex);')
+        self.assertEqual(stdout.getvalue(), """[!] Command "CREATE students (id INDEXED, \05name, age, sex)" is not supported!\n[?] Explaining: Wrong Identifier name in: \05name, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: \05\n""")
 
     def test_create_not_standard_character_before_semicolon(self):
         f = io.StringIO()
@@ -75,31 +86,37 @@ class InputParserTest(unittest.TestCase):
             self.parser.parse_input('CREATE students (id INDEXED, name, age, sex) & ;')
         self.assertEqual(stdout.getvalue(), """[!] Command "CREATE students (id INDEXED, name, age, sex) &" is not supported!\n[?] Explaining: There is text after ")" in CREATE command\n""")
 
-    def test_create_ignore_characters_after_semicolon(self):  # Accepted
-        self.assertEqual(self.parser.parse_input('CREATE students (id INDEXED, name, age, sex); ;'), [["CREATE", "students"], ["id INDEXED", "name", "age", "sex"]])
+    def test_create_quotes(self):
+        f = io.StringIO()
+        with redirect_stdout(f) as stdout:
+            self.parser.parse_input('CREATE students (id INDEXED, "name is sheet", age, sex);')
+        self.assertEqual(stdout.getvalue(), """[!] Command "CREATE students (id INDEXED, "name is sheet", age, sex)" is not supported!\n[?] Explaining: Wrong CREATE command syntax, no spaces in table column name (id INDEXED, "name is sheet", age, sex)\n""")
 
-    def test_create_quotes(self):  # NOT SURE HOW NEED TO WORK  # Accepted
-        self.assertEqual(self.parser.parse_input('CREATE students (id INDEXED, "name is sheet", age, sex);'), [["CREATE", "students"], ["id INDEXED", '"name is sheet"', "age", "sex"]])
+    def test_create_quotes_with_indexed(self):
+        f = io.StringIO()
+        with redirect_stdout(f) as stdout:
+            self.parser.parse_input('CREATE students (id INDEXED, "name is sheet" INDEXED, age, sex);')
+        self.assertEqual(stdout.getvalue(), """[!] Command "CREATE students (id INDEXED, "name is sheet" INDEXED, age, sex)" is not supported!\n[?] Explaining: Wrong CREATE command syntax, no spaces in table column name (id INDEXED, "name is sheet" INDEXED, age, sex)\n""")
 
-    def test_create_quotes_with_indexed(self):  # NOT SURE HOW NEED TO WORK  # Accepted
-        self.assertEqual(self.parser.parse_input('CREATE students (id INDEXED, "name is sheet" INDEXED, age, sex);'), [["CREATE", "students"], ["id INDEXED", '"name is sheet" INDEXED', "age", "sex"]])
-
-    def test_create_several_quotes(self):  # NOT SURE HOW NEED TO WORK
+    def test_create_several_quotes(self):
         f = io.StringIO()
         with redirect_stdout(f) as stdout:
             self.parser.parse_input('CREATE students (id INDEXED, "name is sheet" "name is John", age, sex);')
-        self.assertEqual(stdout.getvalue(), """[!] Command "CREATE students (id INDEXED, "name is sheet" "name is John", age, sex)" is not supported!\n[?] Explaining: Wrong CREATE command syntax, no several quotes "" in table column name (id INDEXED, "name is sheet" "name is John", age, sex)\n""")
+        self.assertEqual(stdout.getvalue(), """[!] Command "CREATE students (id INDEXED, "name is sheet" "name is John", age, sex)" is not supported!\n[?] Explaining: Wrong CREATE command syntax, no spaces in table column name (id INDEXED, "name is sheet" "name is John", age, sex)\n""")
 
-    def test_create_with_different_quotes(self):  # NOT SURE HOW NEED TO WORK
+    def test_create_with_different_quotes(self):
         f = io.StringIO()
         with redirect_stdout(f) as stdout:
             self.parser.parse_input('''CREATE students ('name "dad"');''')
-        self.assertEqual(stdout.getvalue(), """[!] Command "CREATE students ('name "dad"')" is not supported!\n[?] Explaining: Wrong CREATE command syntax, no text before quotes in table column name ('name "dad"')\n""")
+        self.assertEqual(stdout.getvalue(), """[!] Command "CREATE students ('name "dad"')" is not supported!\n[?] Explaining: Wrong CREATE command syntax, no spaces in table column name ('name "dad"')\n""")
 
-    def test_create_single_quotes(self):  # NOT SURE HOW NEED TO WORK  # Accepted
-        self.assertEqual(self.parser.parse_input('CREATE students (id INDEXED, \'name is sheet\', age, sex);'), [["CREATE", "students"], ["id INDEXED", "'name is sheet'", "age", "sex"]])
+    def test_create_single_quotes(self):
+        f = io.StringIO()
+        with redirect_stdout(f) as stdout:
+            self.parser.parse_input('CREATE students (id INDEXED, \'name is sheet\', age, sex);')
+        self.assertEqual(stdout.getvalue(), """[!] Command "CREATE students (id INDEXED, 'name is sheet', age, sex)" is not supported!\n[?] Explaining: Wrong CREATE command syntax, no spaces in table column name (id INDEXED, 'name is sheet', age, sex)\n""")
 
-    def test_create_with_quotes(self):  # NOT SURE HOW NEED TO WORK
+    def test_create_with_quotes(self):
         f = io.StringIO()
         with redirect_stdout(f) as stdout:
             self.parser.parse_input('CREATE "dad students" (id INDEXED, name, age, sex);')
@@ -123,11 +140,13 @@ class InputParserTest(unittest.TestCase):
             self.parser.parse_input('CREATE students (id INDEXED, name, age, sex;')
         self.assertEqual(stdout.getvalue(), """[!] Command "CREATE students (id INDEXED, name, age, sex" is not supported!\n[?] Explaining: There is no ")" in CREATE command\n""")
 
+    ### INSERT ###
+
     def test_insert(self):  # Accepted
         self.assertEqual(self.parser.parse_input('INSERT students (1, Dave, 18, male);'), [["INSERT", "students"], ['1', "Dave", "18", "male"]])
 
     def test_insert_tabulation(self):  # Accepted
-        self.assertEqual(self.parser.parse_input('CREATE students  \n\t\r (id INDEXED, name, age, sex);'), [["CREATE", "students"], ["id INDEXED", "name", "age", "sex"]])
+        self.assertEqual(self.parser.parse_input('Insert students  \n\t\r (id, name, age, sex);'), [["INSERT", "students"], ["id", "name", "age", "sex"]])
 
     def test_insert_reserved_word_column(self):
         f = io.StringIO()
@@ -167,6 +186,8 @@ class InputParserTest(unittest.TestCase):
 
     def test_insert_with_quotes_in_column(self):  # Accepted
         self.assertEqual(self.parser.parse_input('INSERT students ("Dave Dave", 18, male);'), [["INSERT", "students"], ['"Dave Dave"', "18", "male"]])
+
+    ### SELECT ###
 
     def test_select(self):  # Accepted
         self.assertEqual(self.parser.parse_input('SELECT FROM students;'), [['SELECT', 'FROM', 'students'], []])
