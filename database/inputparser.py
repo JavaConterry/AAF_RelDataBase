@@ -23,20 +23,20 @@ class InputParser:
         }
         self.registered_words = ['CREATE', 'INDEXED', 'INSERT', 'INTO', 'SELECT', 'FROM', 'WHERE']
 
-    def _count_brackets(self, user_command):
-        command_name = user_command.split()[0].upper()
-        count_for_brackets = {'(': user_command.count('('), ')': user_command.count(')')}
-        bracket_open = count_for_brackets['(']
-        bracket_close = count_for_brackets[')']
-        if bracket_close == 1 and user_command.split(')')[1] != '':
+    def _count_brackets(self, user_command):  # Worst case TC: O(5n + 6), worst case SC: O(4n+2)
+        command_name = user_command.split()[0].upper()  # TC: O(2n), SC: O(n)
+        count_for_brackets = {'(': user_command.count('('), ')': user_command.count(')')}  # TC: O(2n), SC: O(2n+2)
+        bracket_open = count_for_brackets['(']  # TC: O(1), SC: O(1)
+        bracket_close = count_for_brackets[')']  # TC: O(1), SC: O(1)
+        if bracket_close == 1 and user_command.split(')')[1] != '':  # TC: O(n), SC: O(n) Two comparisons for the case when there is text after ")"
             return self.exception(user_command, f'There is text after ")" in {command_name} command')
-        if bracket_open == 0:
+        if bracket_open == 0:  # TC: O(1) one compare for the case when there is no "("
             return self.exception(user_command, f'There is no "(" in {command_name} command')
-        elif bracket_open != 1:
+        elif bracket_open != 1:  # TC: O(1) one compare for the case when there is more than one "("
             return self.exception(user_command, f'There is {bracket_open} "(" in {command_name} command')
-        if bracket_close == 0:
+        if bracket_close == 0:  # TC: O(1) one compare for the case when there is no ")"
             return self.exception(user_command, f'There is no ")" in {command_name} command')
-        elif bracket_close != 1:
+        elif bracket_close != 1:  # TC: O(1) one compare for the case when there is more than one ")"
             return self.exception(user_command, f'There is {bracket_close} ")" in {command_name} command')
 
     def _enter_command_check(self, enter_command, command_str, second_argument=None):
@@ -108,27 +108,37 @@ class InputParser:
         user_command_str = user_command
 
         command = user_command[:-1].split('(')
-        enter_command, main_command = command[0].split(), command[1].split(',')
+        enter_command, raw_main_command = command[0].split(), command[1].split(',')
 
         check_enter_command = self._enter_command_check(enter_command, user_command_str)
+        enter_command[0] = enter_command[0].upper()  # TC: O(n), SC: O(n)?, n = len(enter_command)
 
         if check_enter_command is not None:
             return check_enter_command
 
-        for word_index in range(len(main_command)):
-            main_command[word_index] = main_command[word_index].strip()
-            word_list = self._check_for_quotes(main_command, word_index, user_command_str, enter_command, command)
-            if '[!]' in word_list:
-                return word_list
-            if len(word_list) > 2:
+        # print(raw_main_command)
+        main_command = []
+
+        for column_name in raw_main_command:
+            is_indexed = False
+            words = column_name.split()
+            # print(words)
+            if len(words) > 2:
                 return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, no spaces in table column name ({command[1]})')
-            if len(word_list) == 2:
-                if word_list[1] == '':
-                    pass
-                elif word_list[1].lower() != 'indexed':
+            if len(words) == 2:
+                if words[1] != '' and words[1].upper() != 'INDEXED':
                     return self.exception(user_command_str, f'Wrong {enter_command[0]} command syntax, no spaces in table column name ({command[1]})')
-            if word_list[0].upper() in self.registered_words:
+                is_indexed = True
+            if words[0].upper() in self.registered_words:
                 return self.exception(user_command_str, "Column name can't be reserved word")
+
+            for word in words:
+                wrong_characters = re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', word)
+                # right_word = re.sub(r"""[^a-zA-Z]*[^a-zA-Z0-9]_""", '', word)
+                # print(right_word, word, wrong_characters)
+                if wrong_characters != '':
+                    return self.exception(user_command_str, f'Wrong Identifier name in: {word}, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: {wrong_characters}')
+            main_command.append([words[0], is_indexed])
 
         return [enter_command, main_command]
 
@@ -219,3 +229,11 @@ class InputParser:
         # command = (re.sub(r"""[^\w\s(),=><'"]""", '', command)).strip() # remove non-words ^\w\s(),=><
         command_to_parse = self.dict.get(command.split()[0].lower(), self.exception)
         return command_to_parse(command)
+
+
+if __name__ == '__main__':
+    parser = InputParser()
+    print(parser.parse_input("CREAte cats(id INDEXED, name INDEXED, favourite_food);"))
+    # print(parser.parse_input("SELECT FROM students WHERE name = Dave"))
+    # print(parser.parse_input("SELECT FROM Customers WHERE Country = 'Mexico'; "))
+    # print(parser.parse_input('SELECT FROM cats WHERE name < "Murzik" OR name = "Pushok";'))
