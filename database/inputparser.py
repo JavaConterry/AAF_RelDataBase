@@ -19,7 +19,8 @@ class InputParser:
             'HELP': "Show help",
             'CREATE': "CREATE table_name (column_name [INDEXED] [, ...]);",
             'INSERT': "INSERT [INTO] table_name (“value” [, ...]);",
-            'SELECT': "SELECT FROM table_name [WHERE condition];"
+            'SELECT': "SELECT FROM table_name [WHERE condition];",
+            'CONDITION': "condition := column_name operator “value” | (condition) AND/OR (condition) | operator  := ( = | < )"
         }
         self.registered_words = ['CREATE', 'INDEXED', 'INSERT', 'INTO', 'SELECT', 'FROM', 'WHERE']
 
@@ -111,7 +112,7 @@ class InputParser:
         enter_command, raw_main_command = command[0].split(), command[1].split(',')
 
         check_enter_command = self._enter_command_check(enter_command, user_command_str)
-        enter_command[0] = enter_command[0].upper()  # TC: O(n), SC: O(n)?, n = len(enter_command)
+        enter_command[0] = enter_command[0].upper()  # TC: O(n), SC: O(n)?, n = len(enter_command[0])
 
         if check_enter_command is not None:
             return check_enter_command
@@ -154,7 +155,7 @@ class InputParser:
         enter_command, raw_main_command = command[0].split(), command[1].split(',')
 
         check_enter_command = self._enter_command_check(enter_command, user_command_str, 'INTO')
-        enter_command[0] = enter_command[0].upper()  # TC: O(n), SC: O(n)?, n = len(enter_command)
+        enter_command[0] = enter_command[0].upper()  # TC: O(n), SC: O(n)?, n = len(enter_command[0])
 
         if check_enter_command is not None:
             return check_enter_command
@@ -184,55 +185,131 @@ class InputParser:
 
         return [enter_command, main_command]
 
+    def _create_conditions(self, conditions, user_command_str):  # TODO: try if error messages are one, not all of them
+        # print(conditions)
+        if conditions == []:
+            return conditions
+        if isinstance(conditions[0], str):
+            words = conditions[0].split()
+            wrong_characters = re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', words[0])
+            if wrong_characters != '':
+                return self.exception(user_command_str, f'Wrong Identifier name in: {words[0]}, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: {wrong_characters}')
+
+            double_quotes = words[-1].count('"')
+            column_name = " ".join(map(lambda x: x.strip(), words))
+            if double_quotes > 2 or double_quotes < 2:
+                return self.exception(user_command_str, f'Wrong SELECT command syntax, {['too many', 'too few quotes'][double_quotes < 2]} in table column name: {column_name}')
+            words[-1] = words[-1].split('"')
+            if words[-1][0] != '':
+                return self.exception(user_command_str, f'Wrong SELECT command syntax, there is a text before quotes in table column value: {column_name}')
+            if words[-1][-1] != '':
+                return self.exception(user_command_str, f'Wrong SELECT command syntax, there is a text after quotes in table column value: {column_name}')
+            # print(conditions)
+            return [words[1].strip(), words[0].strip(), words[-1][1].strip()]
+        if len(conditions) == 1:
+            return [self._create_conditions(conditions[0], user_command_str)]
+        # print(conditions)
+        operator = conditions[1].strip().upper()
+        left = self._create_conditions(conditions[0], user_command_str)
+        right = self._create_conditions(conditions[2], user_command_str)
+        if operator not in ['AND', 'OR']:
+            return self.exception(user_command_str, f'Wrong SELECT command syntax, expected AND or OR')
+        if left == [] or right == []:
+            return self.exception(user_command_str, f'Wrong SELECT command syntax, expected {self.help_commands["SELECT"]}\n[?] {self.help_commands["CONDITION"]}\n[-] Received: {left, operator, right}')
+        return [operator, left, right]
+
     def select(self, user_command):
         user_command_str = user_command
         list_of_commands = user_command.split()
 
-        if len(list_of_commands) > 3:
+        length = len(list_of_commands)
+
+        where_flag = False
+        if length > 3:
             if list_of_commands[3].lower() != 'where':
-                return self.exception(user_command_str, f'Wrong SELECT command syntax, expected {self.help_commands["SELECT"]}')
-            if len(list_of_commands) < 5:
-                return self.exception(user_command_str, f'There is no WHERE condition in SELECT command')
-        elif len(list_of_commands) <= 2:
-            return self.exception(user_command_str, f'Wrong {user_command} command syntax, expected {self.help_commands["SELECT"]}')
-        elif len(list_of_commands) == 3:
-            if list_of_commands[0].lower() != 'select' or list_of_commands[1].lower() != 'from' or list_of_commands[2].upper() in self.registered_words:
-                return self.exception(user_command_str, f'Wrong SELECT command syntax')
+                return self.exception(user_command_str, f'Wrong SELECT command syntax, too many arguments without WHERE')  #, expected {self.help_commands["SELECT"]}
+            if length < 5:
+                return self.exception(user_command_str, f'Wrong SELECT command syntax, too few arguments with WHERE')
+            where_flag = True
+        if length < 3:
+            return self.exception(user_command_str, f'Wrong SELECT command syntax, too few arguments')
+        # if length == 3:
+        if list_of_commands[1].lower() != 'from':
+            return self.exception(user_command_str, f'Wrong SELECT command syntax, expected {self.help_commands["SELECT"]}')
+        if list_of_commands[2].upper() in self.registered_words:
+            return self.exception(user_command_str, f'Wrong SELECT command syntax, table name can\'t be reserved word')
+        wrong_characters_in_table_name = re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', list_of_commands[2])
+        if wrong_characters_in_table_name != '':
+            return self.exception(user_command_str, f'Wrong Identifier name in: {list_of_commands[2]}, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: {wrong_characters_in_table_name}')
 
-        enter_command, main_command = list_of_commands[:3], list_of_commands[4:]
+        enter_command, raw_main_command = list_of_commands[:3], list_of_commands[4:]
+        enter_command[0] = enter_command[0].upper()  # TC: O(n), SC: O(n)?, n = len(enter_command[0])
+        enter_command.pop(1)
+        raw_main_command_str = " ".join(raw_main_command)
+        # print(raw_main_command_str)
+        # print(raw_main_command)
 
-        if re.sub(r"""[^a-zA-Z][^a-zA-Z0-9_]*""", '', "".join(enter_command)) != "".join(enter_command):
-            return self.exception(user_command_str, f'Wrong Identifier name in {enter_command[0]} command, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in {re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', "".join(enter_command))}')
+        brackets_open = raw_main_command_str.count('(')
+        brackets_close = raw_main_command_str.count(')')
+        if brackets_open != brackets_close:
+            return self.exception(user_command_str, f'Wrong SELECT command syntax, brackets are not equal, opened {brackets_open} and closed {brackets_close}')
+        main_command = []
 
-        count_for_main_operators = 0
-        main_operators = []
-        for word in main_command:
-            if word.lower() == 'and' or word.lower() == 'or':
-                main_operators.append(word.upper())
-                count_for_main_operators += 1
-                main_command.remove(word)
-
-        length = len(main_command)
-        if (length % (count_for_main_operators + 1)) != 0:
-            return self.exception(user_command_str, f'Wrong conditions in SELECT command')
-
-        conditions = []
-        pairs_length = length//(count_for_main_operators+1)
-        for word_index in range(pairs_length):
-            conditions.append([[main_command[3*word_index], main_command[3*word_index + 2]], main_command[3*word_index + 1]])
-            if word_index != pairs_length - 1:
-                conditions.append(main_operators.pop(0))
-        if main_operators:
-            return self.exception(user_command_str, f'Wrong conditions in SELECT command, no continuation for {main_operators[0]} operator')
-
-        main_command = conditions
-
-        return [enter_command, main_command]
+        result = []
+        if where_flag:
+            cursor = result
+            cursors = [result]
+            i = 0
+            # brackets_opened = 0
+            while i < len(raw_main_command_str):
+                while i < len(raw_main_command_str)-1 and raw_main_command_str[i] == '(':
+                    # brackets_opened += 1
+                    cursor.append([])
+                    cursors.append(cursor)
+                    cursor = cursor[-1]
+                    i += 1
+                first_time = True
+                while i < len(raw_main_command_str)-1 and raw_main_command_str[i] != ')':
+                    if first_time:
+                        cursor += raw_main_command_str[i]
+                        first_time = False
+                    else:
+                        cursor[-1] += raw_main_command_str[i]
+                    i += 1
+                i += 1
+                while i < len(raw_main_command_str)-1 and raw_main_command_str[i] == ')':
+                    # brackets_opened -= 1
+                    cursor = cursors.pop()
+                    i += 1
+                cursor = cursors.pop()
+                first_time = True
+                while i < len(raw_main_command_str)-1 and raw_main_command_str[i] != '(':
+                    if first_time:
+                        cursor += raw_main_command_str[i]
+                        first_time = False
+                    else:
+                        cursor[-1] += raw_main_command_str[i]
+                    i += 1
+            conditions = result
+            # print(conditions)
+            if len(conditions) != 3:
+                return self.exception(user_command_str, f'Wrong SELECT command syntax, expected {self.help_commands["SELECT"]}\n[?] {self.help_commands["CONDITION"]}\n[-] Received: {conditions}')
+            main_command = self._create_conditions(conditions, user_command_str)
+            # print(main_command)
+        if main_command is not None:
+            if '[!]' in main_command:
+                return main_command
+            return [enter_command, main_command]
+        else:
+            return [enter_command, []]
 
     def exception(self, user_command, explain='No such command'):
         text = f'[!] Command "{user_command}" is not supported!\n[?] Explaining: {explain}'
-        print(text)
-        return text
+        try:
+            raise Exception(text)
+        except Exception as e:
+            print(e)
+        return []
 
     def parse_input(self, command):
         command = command.split(";")[0].strip()
@@ -241,15 +318,20 @@ class InputParser:
         return command_to_parse(command)
 
 
-if __name__ == '__main__':
-    parser = InputParser()
+# if __name__ == '__main__':
+#     parser = InputParser()
     # # print(parser.parse_input('INSERT INTO cats (1, Murzik, Sausages);'))
     # # print(parser.parse_input('INSERT INTO cats ("1", dad"Murzik", "Sausages");'))
     # # print(parser.parse_input('INSERT INTO cats ("1", "Murzik"dad, "Sausages");'))
     # # print(parser.parse_input('INSERT INTO cats ("1", "Murzik", "Sausages");'))
     # print(parser.parse_input('INSERT cats ("2", "Fish");'))
     # print(parser.parse_input("CREAte cats(id INDEXED, name INDEXED, favourite_food);"))
-    # print(parser.parse_input("SELECT FROM students WHERE name = Dave"))
-    # print(parser.parse_input("SELECT FROM Customers WHERE Country = 'Mexico'; "))
-    # print(parser.parse_input('SELECT FROM cats WHERE (name < “Murzik”) OR (name = “Pushok”);'))
-# 
+    # (parser.parse_input('SELECT FROM students WHERE ((name = "Dave") AND (age < "10")) AND (name);'))
+    # print(parser.parse_input('SELECT FROM students WHERE ((name = "Dave") AND (age < "10")) OR ();'))
+    # print(parser.parse_input('SELEct FROM students;'))
+    # print(parser.parse_input('SELECT FROM students WHERE (name = "Dave");'))
+    # print(parser.parse_input('SELECT FROM Customers WHERE (Country = "Mexico"); '))
+    # print(parser.parse_input('SELECT FROM cats WHERE (((name < "Murzik") OR (name = "Pushok")) or ((name < "Murzik") OR (name = "Pushok"))) AND (name < "Murzik");'))
+    # print(parser.parse_input('SELECT FROM cats WHERE (name < "Murzik") OR (name = "Pushok");'))
+    # print(parser.parse_input('SELECT FROM cats WHERE ((name < "Murzik") OR (name = "Pushok")) OR ((name < "Pavlik") OR (name = "Ravlik"));'))
+    # print(parser.parse_input('SELECT FROM cats WHERE (((name < "Murzik") OR (name = "Pushok")) OR (name < "Pavlik")) OR ((name < "Murzik") OR (name = "Pushok"));'))
