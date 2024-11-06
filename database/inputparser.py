@@ -210,6 +210,8 @@ class InputParser:
             return [self._create_conditions(conditions[0], user_command_str)]
         # print(conditions)
         operator = conditions[1].strip().upper()
+        if len(conditions) != 3:
+            return self.exception(user_command_str, f'Wrong SELECT command syntax, expected {self.help_commands["SELECT"]}\n[?] {self.help_commands["CONDITION"]}\n[-] Received: {conditions}')
         left = self._create_conditions(conditions[0], user_command_str)
         right = self._create_conditions(conditions[2], user_command_str)
         if operator not in ['AND', 'OR']:
