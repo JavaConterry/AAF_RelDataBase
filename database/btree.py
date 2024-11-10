@@ -12,23 +12,6 @@ class BTreeIndex:
     def __init__(self, degree=2):
         self.root = BTreeNode(degree)
         self.degree = degree
-    
-    # def search(self, key, node=None):
-    #     if node is None:
-    #         node = self.root
-
-    #     i = 0
-    #     while i < len(node.keys) and key > node.keys[i][0]:
-    #         i += 1
-
-    #     if i < len(node.keys) and node.keys[i][0] == key:
-    #         return node.keys[i][1]
-
-    #     if node.is_leaf:
-    #         return None
-
-    #     return self.search(key, node.children[i])
-
 
     def search(self, key, operator="="):
         results = []
@@ -46,7 +29,7 @@ class BTreeIndex:
             i += 1
 
         if i < len(node.keys) and node.keys[i][0] == key:
-            results.append(node.keys[i][1])
+            results.extend(node.keys[i][1])
 
         if not node.is_leaf:
             self._search_exact(node.children[i], key, results)
@@ -54,7 +37,7 @@ class BTreeIndex:
     def _search_less_than(self, node, key, results):
         i = 0
         while i < len(node.keys) and node.keys[i][0] < key:
-            results.append(node.keys[i][1])
+            results.extend(node.keys[i][1])
             i += 1
 
         if not node.is_leaf:
@@ -65,14 +48,12 @@ class BTreeIndex:
         i = 0
         while i < len(node.keys):
             if node.keys[i][0] > key:
-                results.append(node.keys[i][1])
+                results.extend(node.keys[i][1])
                 if not node.is_leaf:
                     self._search_greater_than(node.children[i], key, results)
-                i += 1
-            else:
-                i += 1
+            i += 1
 
-        if not node.is_leaf and node.keys[-1][0] <= key:
+        if not node.is_leaf:
             self._search_greater_than(node.children[-1], key, results)
 
     def insert(self, key, data):
@@ -87,7 +68,12 @@ class BTreeIndex:
 
     def _insert_non_full(self, node, key, data):
         if node.is_leaf:
-            node.keys.append((key, data))
+            for i, (k, v) in enumerate(node.keys):
+                if k == key:
+                    node.keys[i][1].append(data)
+                    return
+
+            node.keys.append((key, [data]))
             node.keys.sort(key=lambda x: x[0])
         else:
             i = len(node.keys) - 1
