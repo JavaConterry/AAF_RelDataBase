@@ -25,10 +25,16 @@ class Table:
                 self.column_trees[i].insert(key, data)
 
     def aand(self, table):
-        pass #TODO
+        intersection_data = [x for x in self.data if x in table.data]
+        return self.__equivalent_table_from_data(intersection_data)
 
     def oor(self, table):
-        pass #TODO
+        union_data = []
+        concat = self.data + table.data
+        for x in concat:
+            if x not in union_data:
+                union_data.append(x)
+        return self.__equivalent_table_from_data(union_data)
 
     #TODO check
     def select(self, arguments):
@@ -80,10 +86,7 @@ class DataBase:
             if(table is None):
                 return 'TABLE NOT FOUND'
             else:
-                # TODO : currently only temporary solution for complexity 1
-                # Requires update when Parser structure is decided and recursion is required
                 if(len(user_command)>1):
-                    # return table.search(user_command[1][0], user_command[1][1], user_command[1][2])
                     return table.select(user_command[1])
                 return f'TABLE_NAME: {table.table_name}\nTABLE_ARGUMENTS: {table.columns}\nTABLE_INDEXED_COLS: {table.indexed_columns}\nTABLE_DATA:\n{table.data}'
                 

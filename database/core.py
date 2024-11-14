@@ -1,5 +1,5 @@
 from inputparser import InputParser
-from db import DataBase
+from db import DataBase, Table
 
 
 class Core():
@@ -22,7 +22,10 @@ class Core():
             response = db.do(command)
 
             #temporal response output
-            print(response)
+            if(isinstance(response, Table)):
+                print(response.data)
+            else:
+                print(response)
             
             main_input = input()
 
