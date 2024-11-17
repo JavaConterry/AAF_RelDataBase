@@ -1,12 +1,13 @@
 class BTreeNode:
     def __init__(self, degree, is_leaf=True):
-        self.degree = degree 
-        self.keys = [] 
+        self.degree = degree
+        self.keys = []
         self.children = []
-        self.is_leaf = is_leaf 
+        self.is_leaf = is_leaf
 
     def is_full(self):
         return len(self.keys) == 2 * self.degree - 1
+
 
 class BTreeIndex:
     def __init__(self, degree=2):
@@ -63,7 +64,7 @@ class BTreeIndex:
             new_root.children.append(self.root)
             self.split_child(new_root, 0)
             self.root = new_root
-        
+
         self._insert_non_full(self.root, key, data)
 
     def _insert_non_full(self, node, key, data):

@@ -3,7 +3,7 @@ import unittest
 import io
 from contextlib import redirect_stdout
 
-from inputparser import InputParser
+from database.inputparser import InputParser
 
 
 class InputParserTest(unittest.TestCase):
