@@ -1,5 +1,5 @@
-from inputparser import InputParser
-from db import DataBase
+from database.inputparser import InputParser
+from database.db import DataBase, Table
 
 
 class Core():
@@ -21,11 +21,14 @@ class Core():
             command = parser.parse_input(main_input)
             response = db.do(command)
 
-            print(response)
-            
+            # temporal response output
+            if (isinstance(response, Table)):
+                print(response.data)
+            else:
+                print(response)
+
             main_input = input()
 
 
 if __name__ == "__main__":
-    # db = RelationalDataBase()
-    core = Core()  # (db)
+    core = Core()
