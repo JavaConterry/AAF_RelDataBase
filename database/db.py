@@ -36,8 +36,9 @@ class Table:
                 union_data.append(x)
         return self.__equivalent_table_from_data(union_data)
 
-    #TODO check
     def select(self, arguments):
+        if(arguments == []):
+            return self.data
         if not (isinstance(arguments[1], list) or isinstance(arguments[2], list)):
             return self.__equivalent_table_from_data(self.search(arguments[1], arguments[2], arguments[0]))
         elif isinstance(arguments[1], list) or isinstance(arguments[2], list):
