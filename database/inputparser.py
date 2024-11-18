@@ -185,8 +185,32 @@ class InputParser:
 
         return [enter_command, main_command]
 
+    # def _split_conditions(self, conditions, error=None):
+    #     print(conditions)
+    #     if len(conditions) == 3 and not isinstance(conditions[0], str) and not isinstance(conditions[2], str):
+    #         condition1, error1 = self._split_conditions(conditions[0])
+    #         condition2, error2 = self._split_conditions(conditions[2])
+    #     elif isinstance(conditions[0], str) and isinstance(conditions[2], str):
+            
+    #     if error1 is not None or error2 is not None:
+    #         return [], [error1, error2]
+    #     else:
+    #         return [condition1, condition2]
+
     def _create_conditions(self, conditions, user_command_str):  # TODO: try if error messages are one, not all of them
         # print(conditions)
+        # print(self._split_conditions(conditions))
+        # result = []
+        # cursor = [result, result]
+        # if len(conditions) == 3 and not isinstance(conditions[0], str):
+        #     result.append([conditions[1], conditions[0], conditions[2]])
+        #     depth = [1, 1]
+        #     conditions = [conditions[0], conditions[2]]
+        # while len(conditions) == 2:
+        #     for i in range(0, 3):
+        #         result[i].append([conditions[i-1][1], conditions[i-1][0], conditions[i-1][2]])
+        #         depth[i-1] += 1
+        #         conditions[i-1] = 
         if conditions == []:
             return conditions
         if isinstance(conditions[0], str):
@@ -294,9 +318,11 @@ class InputParser:
                     i += 1
             conditions = result
             # print(conditions)
-            if len(conditions) != 3:
+            if len(conditions) != 3 and len(conditions) != 1:
                 return self.exception(user_command_str, f'Wrong SELECT command syntax, expected {self.help_commands["SELECT"]}\n[?] {self.help_commands["CONDITION"]}\n[-] Received: {conditions}')
             main_command = self._create_conditions(conditions, user_command_str)
+            if len(main_command) == 1:
+                main_command = main_command[0]
             # print(main_command)
         if main_command is not None:
             if '[!]' in main_command:
@@ -311,7 +337,7 @@ class InputParser:
             raise Exception(text)
         except Exception as e:
             print(e)
-        return []
+        return text
 
     def parse_input(self, command):
         command = command.split(";")[0].strip()
@@ -320,8 +346,8 @@ class InputParser:
         return command_to_parse(command)
 
 
-# if __name__ == '__main__':
-#     parser = InputParser()
+if __name__ == '__main__':
+    parser = InputParser()
     # # print(parser.parse_input('INSERT INTO cats (1, Murzik, Sausages);'))
     # # print(parser.parse_input('INSERT INTO cats ("1", dad"Murzik", "Sausages");'))
     # # print(parser.parse_input('INSERT INTO cats ("1", "Murzik"dad, "Sausages");'))
@@ -331,9 +357,9 @@ class InputParser:
     # (parser.parse_input('SELECT FROM students WHERE ((name = "Dave") AND (age < "10")) AND (name);'))
     # print(parser.parse_input('SELECT FROM students WHERE ((name = "Dave") AND (age < "10")) OR ();'))
     # print(parser.parse_input('SELEct FROM students;'))
-    # print(parser.parse_input('SELECT FROM students WHERE (name = "Dave");'))
+    print(parser.parse_input('SELECT FROM students WHERE (name = "Dave");'))
     # print(parser.parse_input('SELECT FROM Customers WHERE (Country = "Mexico"); '))
     # print(parser.parse_input('SELECT FROM cats WHERE (((name < "Murzik") OR (name = "Pushok")) or ((name < "Murzik") OR (name = "Pushok"))) AND (name < "Murzik");'))
-    # print(parser.parse_input('SELECT FROM cats WHERE (name < "Murzik") OR (name = "Pushok");'))
-    # print(parser.parse_input('SELECT FROM cats WHERE ((name < "Murzik") OR (name = "Pushok")) OR ((name < "Pavlik") OR (name = "Ravlik"));'))
+    print(parser.parse_input('SELECT FROM cats WHERE (name < "Murzik") OR (name = "Pushok");'))
+    print(parser.parse_input('SELECT FROM cats WHERE ((name < "Murzik") OR (name = "Pushok")) OR ((name < "Pavlik") OR (name = "Ravlik"));'))
     # print(parser.parse_input('SELECT FROM cats WHERE (((name < "Murzik") OR (name = "Pushok")) OR (name < "Pavlik")) OR ((name < "Murzik") OR (name = "Pushok"));'))
