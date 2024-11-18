@@ -3,6 +3,7 @@
 # SELECT FROM table_name
 import re
 
+from .error import Error
 
 # RESERVED_COMMANDS = ['CREATE', 'INDEXED', 'INSERT', 'INTO', 'SELECT', 'FROM', 'WHERE']
 
@@ -185,50 +186,35 @@ class InputParser:
 
         return [enter_command, main_command]
 
-    # def _split_conditions(self, conditions, error=None):
-    #     print(conditions)
-    #     if len(conditions) == 3 and not isinstance(conditions[0], str) and not isinstance(conditions[2], str):
-    #         condition1, error1 = self._split_conditions(conditions[0])
-    #         condition2, error2 = self._split_conditions(conditions[2])
-    #     elif isinstance(conditions[0], str) and isinstance(conditions[2], str):
-            
-    #     if error1 is not None or error2 is not None:
-    #         return [], [error1, error2]
-    #     else:
-    #         return [condition1, condition2]
-
-    def _create_conditions(self, conditions, user_command_str):  # TODO: try if error messages are one, not all of them
-        # print(conditions)
-        # print(self._split_conditions(conditions))
-        # result = []
-        # cursor = [result, result]
-        # if len(conditions) == 3 and not isinstance(conditions[0], str):
-        #     result.append([conditions[1], conditions[0], conditions[2]])
-        #     depth = [1, 1]
-        #     conditions = [conditions[0], conditions[2]]
-        # while len(conditions) == 2:
-        #     for i in range(0, 3):
-        #         result[i].append([conditions[i-1][1], conditions[i-1][0], conditions[i-1][2]])
-        #         depth[i-1] += 1
-        #         conditions[i-1] = 
-        if conditions == []:
-            return conditions
+    def _create_conditions(self, conditions, error=Error(), depth=0):  # TODO: try if error messages are one, not all of them
+        print(conditions)
+        # if conditions == []:
+        #     return conditions
         if isinstance(conditions[0], str):
+
             words = conditions[0].split()
             wrong_characters = re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', words[0])
+
             if wrong_characters != '':
-                return self.exception(user_command_str, f'Wrong Identifier name in: {words[0]}, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: {wrong_characters}')
+                error += f'[!] Wrong Identifier name in: {words[0]}, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: {wrong_characters}'
 
             double_quotes = words[-1].count('"')
+
             column_name = " ".join(map(lambda x: x.strip(), words))
+
             if double_quotes > 2 or double_quotes < 2:
-                return self.exception(user_command_str, f'Wrong SELECT command syntax, {['too many', 'too few quotes'][double_quotes < 2]} in table column name: {column_name}')
+                error += f'[!] Wrong SELECT command syntax, {['too many', 'too few quotes'][double_quotes < 2]} in table column name: {column_name}'
+
             words[-1] = words[-1].split('"')
+
             if words[-1][0] != '':
-                return self.exception(user_command_str, f'Wrong SELECT command syntax, there is a text before quotes in table column value: {column_name}')
+                error += f'[!] Wrong SELECT command syntax, there is a text before quotes in table column value: {column_name}'
+
             if words[-1][-1] != '':
-                return self.exception(user_command_str, f'Wrong SELECT command syntax, there is a text after quotes in table column value: {column_name}')
+                error += f'[!] Wrong SELECT command syntax, there is a text after quotes in table column value: {column_name}'
+
             # print(conditions)
+            if error
             return [words[1].strip(), words[0].strip(), words[-1][1].strip()]
         if len(conditions) == 1:
             return [self._create_conditions(conditions[0], user_command_str)]
@@ -320,16 +306,16 @@ class InputParser:
             # print(conditions)
             if len(conditions) != 3 and len(conditions) != 1:
                 return self.exception(user_command_str, f'Wrong SELECT command syntax, expected {self.help_commands["SELECT"]}\n[?] {self.help_commands["CONDITION"]}\n[-] Received: {conditions}')
-            main_command = self._create_conditions(conditions, user_command_str)
+            if conditions != []:
+                main_command = self._create_conditions(conditions)  #, user_command_str
+            else:
+                main_command = []
             if len(main_command) == 1:
                 main_command = main_command[0]
             # print(main_command)
-        if main_command is not None:
             if '[!]' in main_command:
                 return main_command
             return [enter_command, main_command]
-        else:
-            return [enter_command, []]
 
     def exception(self, user_command, explain='No such command'):
         text = f'[!] Command "{user_command}" is not supported!\n[?] Explaining: {explain}'
@@ -337,7 +323,7 @@ class InputParser:
             raise Exception(text)
         except Exception as e:
             print(e)
-        return text
+        return [[None], [None]]
 
     def parse_input(self, command):
         command = command.split(";")[0].strip()
