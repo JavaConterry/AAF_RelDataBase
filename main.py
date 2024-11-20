@@ -1,5 +1,6 @@
 from database.inputparser import InputParser
 from database.db import DataBase, Table
+from database.visualizer import Visualizer
 
 
 class Core():
@@ -20,12 +21,8 @@ class Core():
             # command pipeline
             command = parser.parse_input(main_input)
             response = db.do(command)
-
-            # temporal response output
-            if (isinstance(response, Table)):
-                print(response.data)
-            else:
-                print(response)
+            visualised_response = Visualizer(response)
+            visualised_response.visualize()
 
             main_input = input()
 
