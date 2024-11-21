@@ -129,6 +129,41 @@ class DataBaseTest(unittest.TestCase):
         responce = db.do([['SELECT', 'table'], ['OR', ['AND', ['>', 'age', '26'], ['<', 'age', '28']], ['=', 'team', 'McLaren']]])
         self.assertEqual(responce.data, [['Max Verstappen', '27', 'ORBR'],['Charles Leclerc', '27', 'Ferrari'],['Oscar Piastri', '23', 'McLaren'],['Lando Norris', '25', 'McLaren']])
 
+    def test_search_in_single_column_indexed(self):
+        db = DataBase()
+        db.do([['CREATE', 'table'], [['studentID', True], ['personalID', True]]])
+        db.do([['INSERT', 'table'], ['114', '24673']])
+        db.do([['INSERT', 'table'], ['24673', '27']])
+        db.do([['INSERT', 'table'], ['4213', '114']])
+        responce = db.do([['SELECT', 'table'], ['=', 'studentID', '114']])
+        self.assertEqual(responce.data, [['114', '24673']])
+
+    def test_search_in_single_column_notindexed(self):
+        db = DataBase()
+        db.do([['CREATE', 'table'], [['studentID', False], ['personalID', False]]])
+        db.do([['INSERT', 'table'], ['114', '24673']])
+        db.do([['INSERT', 'table'], ['24673', '27']])
+        db.do([['INSERT', 'table'], ['4213', '114']])
+        responce = db.do([['SELECT', 'table'], ['=', 'studentID', '114']])
+        self.assertEqual(responce.data, [['114', '24673']])
+
+    def test_search_in_single_column_semiindexed(self):
+        db = DataBase()
+        db.do([['CREATE', 'table'], [['studentID', True], ['personalID', False]]])
+        db.do([['INSERT', 'table'], ['114', '24673']])
+        db.do([['INSERT', 'table'], ['24673', '27']])
+        db.do([['INSERT', 'table'], ['4213', '114']])
+        responce = db.do([['SELECT', 'table'], ['=', 'studentID', '114']])
+        self.assertEqual(responce.data, [['114', '24673']])
+
+    def test_search_in_single_column_semiindexed_2(self):
+        db = DataBase()
+        db.do([['CREATE', 'table'], [['studentID', True], ['personalID', False]]])
+        db.do([['INSERT', 'table'], ['114', '24673']])
+        db.do([['INSERT', 'table'], ['24673', '27']])
+        db.do([['INSERT', 'table'], ['4213', '114']])
+        responce = db.do([['SELECT', 'table'], ['=', 'personalID', '114']])
+        self.assertEqual(responce.data, [['4213', '114']])
 
 if __name__ == '__main__':
     unittest.main()
