@@ -41,17 +41,27 @@ class Table:
             # return self.data
             return self
         if not (isinstance(arguments[1], list) or isinstance(arguments[2], list)):
-            return self.__equivalent_table_from_data(self.search(arguments[1], arguments[2], arguments[0]))
+            search_result = self.search(arguments[1], arguments[2], arguments[0])
+            if not isinstance(search_result, list):
+                return search_result
+            else:
+                return self.__equivalent_table_from_data(search_result)
         elif isinstance(arguments[1], list) or isinstance(arguments[2], list):
+            if isinstance(arguments[1], str):
+                return arguments[1]
+            elif isinstance(arguments[2], str):
+                return arguments[2]
             match arguments[0]:
                 case "AND":
                     return self.select(arguments[1]).aand(self.select(arguments[2]))
                 case "OR":
                     return self.select(arguments[1]).oor(self.select(arguments[2]))
                 case _:
-                    print("Unknown operator")
+                    return "UNKNOWN OPERATOR"
 
     def search(self, column, key, operator='='):
+        if (column not in self.columns):
+            return f'COLUMN {column} NOT FOUND'
         if (column in self.indexed_columns):
             tree_idx = self.indexed_columns.index(column)
             return self.column_trees[tree_idx].search(key, operator)
@@ -60,7 +70,7 @@ class Table:
                 case '=': return [data_unit for data_unit in self.data if data_unit[self.columns.index(column)] == key]
                 case '<': return [data_unit for data_unit in self.data if data_unit[self.columns.index(column)] < key]
                 case '>': return [data_unit for data_unit in self.data if data_unit[self.columns.index(column)] > key]
-                case _: return
+                case _: return f'WRONG OPERATOR {operator}'
 
 
 class DataBase:
@@ -92,7 +102,8 @@ class DataBase:
             else:
                 if(len(user_command)>1):
                     return table.select(user_command[1])
-                return f'TABLE_NAME: {table.table_name}\nTABLE_ARGUMENTS: {table.columns}\nTABLE_INDEXED_COLS: {table.indexed_columns}\nTABLE_DATA:\n{table.data}'
+                # return f'TABLE_NAME: {table.table_name}\nTABLE_ARGUMENTS: {table.columns}\nTABLE_INDEXED_COLS: {table.indexed_columns}\nTABLE_DATA:\n{table.data}'
+                return table
 
         elif (user_command[0][0] == 'INSERT'):
             table = self.__findtable(user_command[0][1])
