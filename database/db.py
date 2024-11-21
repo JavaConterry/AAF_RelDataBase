@@ -38,7 +38,8 @@ class Table:
 
     def select(self, arguments):
         if (arguments == []):
-            return self.data
+            # return self.data
+            return self
         if not (isinstance(arguments[1], list) or isinstance(arguments[2], list)):
             return self.__equivalent_table_from_data(self.search(arguments[1], arguments[2], arguments[0]))
         elif isinstance(arguments[1], list) or isinstance(arguments[2], list):
@@ -56,7 +57,7 @@ class Table:
             return self.column_trees[tree_idx].search(key, operator)
         else:
             match(operator):
-                case '=': return [data_unit for data_unit in self.data if key in data_unit]
+                case '=': return [data_unit for data_unit in self.data if data_unit[self.columns.index(column)] == key]
                 case '<': return [data_unit for data_unit in self.data if data_unit[self.columns.index(column)] < key]
                 case '>': return [data_unit for data_unit in self.data if data_unit[self.columns.index(column)] > key]
                 case _: return
@@ -66,7 +67,7 @@ class DataBase:
     def __init__(self):
         self.tables = []
 
-    def _findtable(self, table_name):
+    def __findtable(self, table_name):
         for table in self.tables:
             if (table.table_name == table_name):
                 return table
@@ -76,13 +77,16 @@ class DataBase:
         ### execute command -> results in response
 
         if (user_command[0][0] == "CREATE"):
-            new_table = Table(user_command[0][1], [user_command[1][i][0] for i in range(len(user_command[1]))],
-                              [user_command[1][i][0] for i in range(len(user_command[1])) if user_command[1][i][1]])
-            self.tables.append(new_table)
-            return 'COMMAND IS EXECUTED'
+            if self.__findtable(user_command[0][1]) is None:
+                new_table = Table(user_command[0][1], [user_command[1][i][0] for i in range(len(user_command[1]))],
+                                [user_command[1][i][0] for i in range(len(user_command[1])) if user_command[1][i][1]])
+                self.tables.append(new_table)
+                return 'COMMAND IS EXECUTED'
+            else:
+                return 'TABLE ALREADY EXISTS'
 
         elif (user_command[0][0] == "SELECT"):
-            table = self._findtable(user_command[0][1])
+            table = self.__findtable(user_command[0][1])
             if(table is None):
                 return 'TABLE NOT FOUND'
             else:
@@ -91,9 +95,12 @@ class DataBase:
                 return f'TABLE_NAME: {table.table_name}\nTABLE_ARGUMENTS: {table.columns}\nTABLE_INDEXED_COLS: {table.indexed_columns}\nTABLE_DATA:\n{table.data}'
 
         elif (user_command[0][0] == 'INSERT'):
-            table = self._findtable(user_command[0][1])
+            table = self.__findtable(user_command[0][1])
             if (table is None):
                 return 'TABLE NOT FOUND'
             else:
-                table.insert(user_command[1])
+                if(len(table.columns) == len(user_command[1])):
+                    table.insert(user_command[1])
+                else:
+                    return 'WRONG NUMBER OF ARGUMENTS'
             return 'COMMAND IS EXECUTED'
