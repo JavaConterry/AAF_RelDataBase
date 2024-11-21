@@ -15,7 +15,7 @@ SELECT FROM table WHERE ((age > "26") AND (age < "28")) OR (team = "McLaren");
 
 ---
 
-1. Second
+2. Second
 Create studeNts (id, age);  
 insert into students ("1", "25");  
 insert into studeNts ("1", "25");  

@@ -219,7 +219,7 @@ class InputParserTest(unittest.TestCase):
         f = io.StringIO()
         with redirect_stdout(f) as stdout:
             self.parser.parse_input('SELECT FROM students WHERE ((name = "Don") AND (age < "25")) AND (name =);')
-        self.assertEqual(stdout.getvalue(), """[!] Command "SELECT FROM students WHERE ((name = "Don") AND (age < "25")) AND (name =)" is not supported!\n[?] Explanation: [?] Wrong SELECT command syntax, too few quotes in table column name: name\n[?] Wrong SELECT command syntax, too few quotes in table column name: name =\n""")
+        self.assertEqual(stdout.getvalue(), """[!] Command "SELECT FROM students WHERE ((name = "Don") AND (age < "25")) AND (name =)" is not supported!\n[?] Explanation: [?] Wrong SELECT command syntax, too few quotes in table column name: name =\n""")
 
     def test_select_with_quotes(self):
         f = io.StringIO()

@@ -191,16 +191,18 @@ class InputParser:
 
         return [enter_command, main_command]
 
-    def _create_conditions(self, conditions, error=Error()):
+    def _create_conditions(self, conditions, error):
         # print(conditions)
         if conditions == []:
             error += '[?] Wrong SELECT command syntax, wrong conditions in WHERE clause'
         elif isinstance(conditions[0], str):
 
             words = conditions[0].split()
+            # print(words)
             wrong_characters = re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', words[0])
 
             if wrong_characters != '':
+                # print(wrong_characters)
                 error += f'[?] Wrong Identifier name in: {words[0]}, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: {wrong_characters}'
 
             double_quotes = words[-1].count('"')
@@ -316,13 +318,17 @@ class InputParser:
         if len(conditions) != 3 and len(conditions) != 1 and conditions != []:
             return self.exception(user_command_str, f'Wrong SELECT command syntax, expected {self.help_commands["SELECT"]}\n[?] {self.help_commands["CONDITION"]}\n[-] Received: {conditions}')
         if conditions != []:
-            main_command = self._create_conditions(conditions)  #, user_command_str
+            error = Error()
+            main_command = self._create_conditions(conditions, error)  #, user_command_str
         else:
             main_command = conditions
         # print(main_command)
         if isinstance(main_command, Error):
+            # print('I am returning None NOne')
             return self.exception(user_command_str, main_command)
         if len(main_command) == 1:
+            if isinstance(main_command[0], Error):
+                return self.exception(user_command_str, main_command[0])
             main_command = main_command[0]
         # print(main_command)
         return [enter_command, main_command]
@@ -340,7 +346,9 @@ class InputParser:
         # command = (re.sub(r"""[^\w\s(),=><'"]""", '', command)).strip() # remove non-words ^\w\s(),=><
         if command == '':
             return self.exception(command)
+        # print(command)
         command_to_parse = self.dict.get(command.split()[0].lower(), self.exception)
+        # print(command_to_parse)
         return command_to_parse(command)
 
 
