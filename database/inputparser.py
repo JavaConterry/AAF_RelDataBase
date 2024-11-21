@@ -338,6 +338,8 @@ class InputParser:
     def parse_input(self, command):
         command = command.split(";")[0].strip()
         # command = (re.sub(r"""[^\w\s(),=><'"]""", '', command)).strip() # remove non-words ^\w\s(),=><
+        if command == '':
+            return self.exception(command)
         command_to_parse = self.dict.get(command.split()[0].lower(), self.exception)
         return command_to_parse(command)
 
@@ -354,7 +356,8 @@ if __name__ == '__main__':
     # (parser.parse_input('SELECT FROM students WHERE ((name = "Dave") AND (age < "10")) AND (name);'))
     # print(parser.parse_input('SELECT FROM students WHERE ((name = "Dave") AND (age < "10")) OR ();'))
     # print(parser.parse_input('SELEct FROM students;'))
-    print(parser.parse_input('SELECT FROM students WHERE ((name = "Dave") AND (age < "10")) AND (name =);'))
+    print(parser.parse_input(';'))
+    # print(parser.parse_input('SELECT FROM students WHERE ((name = "Dave") AND (age < "10")) AND (name =);'))
     # print(parser.parse_input('SELECT FROM Customers WHERE (Country = "Mexico"); '))
     # print(parser.parse_input('SELECT FROM cats WHERE (((name < "Murzik") OR (name = "Pushok")) or ((name < "Murzik") OR (name = "Pushok"))) AND (name < "Murzik");'))
     # print(parser.parse_input('SELECT FROM cats WHERE (name < "Murzik") OR (name = "Pushok");'))
