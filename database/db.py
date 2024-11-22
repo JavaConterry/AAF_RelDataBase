@@ -7,7 +7,7 @@ class Table:
         self.columns = columns
         self.data = []
         self.indexed_columns = indexed_columns
-        self.column_trees = [BTreeIndex() for _ in range(len(indexed_columns))] if indexed_columns is not None else None
+        self.column_trees = [BTreeIndex(degree=5) for _ in range(len(indexed_columns))] if indexed_columns is not None else None
 
     # can be too slow, needs approvement
     def __equivalent_table_from_data(self, data):

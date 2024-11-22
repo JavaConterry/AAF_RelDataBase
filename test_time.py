@@ -18,17 +18,24 @@ class Core():
             if main_input == 'exit':
                 break
             
-
+            
             # command pipeline
             command = parser.parse_input(main_input)
             if(command[0][0] == 'SELECT'):
-                start_time = time.time()
-                response = db.do(command)
-                print('Duration seconds: ', time.time() - start_time)
+                total_time = 0
+                for _ in range(2000):
+                    start_time = time.time()
+                    response = db.do(command)
+                    duration = time.time() - start_time
+                    total_time += duration
+
+                average_time = total_time / 2000
+                print('Avarage Time: ', average_time)
             else:
                 response = db.do(command)
             visualised_response = Visualizer(response)
             visualised_response.visualize()
+
 
             main_input = input()
 
