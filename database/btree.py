@@ -14,6 +14,16 @@ class BTreeIndex:
         self.root = BTreeNode(degree)
         self.degree = degree
 
+    def total_data_length(self):
+        return self._calculate_total_data_length(self.root)
+
+    def _calculate_total_data_length(self, node):
+        total_length = sum(len(data_list) for _, data_list in node.keys)
+        if not node.is_leaf:
+            for child in node.children:
+                total_length += self._calculate_total_data_length(child)
+        return total_length
+
     def search(self, key, operator="="):
         results = []
         if operator == "=":
@@ -40,7 +50,6 @@ class BTreeIndex:
         while i < len(node.keys) and node.keys[i][0] < key:
             results.extend(node.keys[i][1])
             i += 1
-
         if not node.is_leaf:
             for j in range(i + 1):
                 self._search_less_than(node.children[j], key, results)

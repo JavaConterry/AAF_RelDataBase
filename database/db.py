@@ -10,7 +10,7 @@ class Table:
         self.column_trees = [BTreeIndex(degree=5) for _ in range(len(indexed_columns))] if indexed_columns is not None else None
 
     # can be too slow, needs approvement
-    def __equivalent_table_from_data(self, data):
+    def equivalent_table_from_data(self, data):
         new_table = Table(self.table_name, self.columns, indexed_columns=self.indexed_columns)
         for data_unit in data:
             new_table.insert(data_unit)
@@ -26,7 +26,7 @@ class Table:
 
     def aand(self, table):
         intersection_data = [x for x in self.data if x in table.data]
-        return self.__equivalent_table_from_data(intersection_data)
+        return self.equivalent_table_from_data(intersection_data)
 
     def oor(self, table):
         union_data = []
@@ -34,7 +34,7 @@ class Table:
         for x in concat:
             if x not in union_data:
                 union_data.append(x)
-        return self.__equivalent_table_from_data(union_data)
+        return self.equivalent_table_from_data(union_data)
 
     def select(self, arguments):
         if (arguments == []):
@@ -45,7 +45,7 @@ class Table:
             if not isinstance(search_result, list):
                 return search_result
             else:
-                return self.__equivalent_table_from_data(search_result)
+                return self.equivalent_table_from_data(search_result)
         elif isinstance(arguments[1], list) or isinstance(arguments[2], list):
             if isinstance(arguments[1], str):
                 return arguments[1]
