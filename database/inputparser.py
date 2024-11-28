@@ -15,18 +15,22 @@ class InputParser:
     def __init__(self):
         self.dict = {
             'HELP'.lower(): self.help,
+            'SAVE'.lower(): self.save,
+            'LOAD'.lower(): self.load,
             'CREATE'.lower(): self.create,
             'INSERT'.lower(): self.insert,
             'SELECT'.lower(): self.select
         }
         self.help_commands = {
             'HELP': "Show help",
+            'SAVE': "Save table_name [, table_name [, ...]]",
+            'LOAD': "Load table_name [, table_name [, ...]]",
             'CREATE': "CREATE table_name (column_name [INDEXED] [, ...]);",
             'INSERT': "INSERT [INTO] table_name (“value” [, ...]);",
             'SELECT': "SELECT FROM table_name [WHERE condition];",
             'CONDITION': "condition := column_name operator “value” | (condition) AND/OR (condition) | operator  := ( = | < )"
         }
-        self.registered_words = ['CREATE', 'INDEXED', 'INSERT', 'INTO', 'SELECT', 'FROM', 'WHERE']
+        self.registered_words = ['CREATE', 'INDEXED', 'INSERT', 'INTO', 'SELECT', 'FROM', 'WHERE', "SAVE", "LOAD"]
 
     def _count_brackets(self, user_command):  # Worst case TC: O(5n + 6), worst case SC: O(4n+2)
         command_name = user_command.split()[0].upper()  # TC: O(2n), SC: O(n)
@@ -103,6 +107,30 @@ class InputParser:
             else:
                 self.exception(user_command, 'No such command')
         return user_command
+
+    def save(self, user_command):
+        list_of_commands = user_command.split()
+        if len(list_of_commands) < 2:
+            return self.exception(user_command, 'Wrong SAVE command, too few arguments')
+        table_names = list_of_commands[1:]
+        for table_name in table_names:
+            wrong_characters_in_table_name = re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', table_name)
+            if wrong_characters_in_table_name != '':
+                return self.exception(user_command, f'Wrong Identifier name in: {table_name}, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: {wrong_characters_in_table_name}')
+
+        return [[list_of_commands[0].upper()], table_names]
+
+    def load(self, user_command):
+        list_of_commands = user_command.split()
+        if len(list_of_commands) < 2:
+            return self.exception(user_command, 'Wrong LOAD command, too few arguments')
+        table_names = list_of_commands[1:]
+        for table_name in table_names:
+            wrong_characters_in_table_name = re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', table_name)
+            if wrong_characters_in_table_name != '':
+                return self.exception(user_command, f'Wrong Identifier name in: {table_name}, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: {wrong_characters_in_table_name}')
+
+        return [[list_of_commands[0].upper()], table_names]
 
     def create(self, user_command):
         check_brackets = self._count_brackets(user_command)
