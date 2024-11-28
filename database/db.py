@@ -1,6 +1,7 @@
 import os
 import json
 
+import pandas as pd
 
 from .btree import BTreeIndex
 
@@ -23,6 +24,28 @@ class Table(dict):
         node = Table(dict_['table_name'], dict_['columns'], dict_['data'], dict_['indexed_columns'], dict_['column_trees'])
         node.column_trees = list(map(BTreeIndex.from_dict, node.column_trees))
         return node
+
+    @staticmethod
+    def from_csv(file_path):
+        data = pd.read_csv(file_path)
+        table_name = file_path.split(".")[0]
+
+        columns = data.columns.to_list()
+        indexed_columns = None
+        for col_index in range(len(columns)):
+            if "INDEXED" in columns[col_index].upper():
+                columns[col_index] = columns[col_index].replace("INDEXED", "").strip()
+                if indexed_columns is None:
+                    indexed_columns = [columns[col_index]]
+                else:
+                    indexed_columns.append(columns[col_index])
+            columns[col_index] = columns[col_index].strip()
+
+        data = [list(map(str, row)) for row in data.values]
+        table = Table(table_name, columns, [], indexed_columns=indexed_columns)
+        for data_unit in data:
+            table.insert(data_unit)
+        return table
 
     # can be too slow, needs approvement
     def __equivalent_table_from_data(self, data):
@@ -154,4 +177,9 @@ class DataBase:
                 pyobj = Table.from_dict(json_to_table)
                 self.tables.append(pyobj)
             return 'COMMAND IS EXECUTED'
-        
+
+        elif (user_command[0][0] == 'READ'):
+            for csv_file in user_command[1]:
+                table = Table.from_csv(csv_file)
+                self.tables.append(table)
+            return 'COMMAND IS EXECUTED'

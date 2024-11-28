@@ -17,6 +17,7 @@ class InputParser:
             'HELP'.lower(): self.help,
             'SAVE'.lower(): self.save,
             'LOAD'.lower(): self.load,
+            'READ'.lower(): self.read,
             'CREATE'.lower(): self.create,
             'INSERT'.lower(): self.insert,
             'SELECT'.lower(): self.select
@@ -25,6 +26,7 @@ class InputParser:
             'HELP': "Show help",
             'SAVE': "Save table_name [, table_name [, ...]]",
             'LOAD': "Load table_name [, table_name [, ...]]",
+            'READ': "Read csv_file [, csv_file [, ...]]",
             'CREATE': "CREATE table_name (column_name [INDEXED] [, ...]);",
             'INSERT': "INSERT [INTO] table_name (“value” [, ...]);",
             'SELECT': "SELECT FROM table_name [WHERE condition];",
@@ -131,6 +133,14 @@ class InputParser:
                 return self.exception(user_command, f'Wrong Identifier name in: {table_name}, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: {wrong_characters_in_table_name}')
 
         return [[list_of_commands[0].upper()], table_names]
+
+    def read(self, user_command):
+        list_of_commands = user_command.split()
+        if len(list_of_commands) < 2:
+            return self.exception(user_command, 'Wrong READ command, too few arguments')
+        csv_files = list_of_commands[1:]
+
+        return [[list_of_commands[0].upper()], csv_files]
 
     def create(self, user_command):
         check_brackets = self._count_brackets(user_command)
