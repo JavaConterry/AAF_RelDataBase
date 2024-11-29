@@ -169,8 +169,12 @@ class DataBase:
 
         elif (user_command[0][0] == 'LOAD'):
             for table_name in user_command[1]:
-                if not os.path.exists("./tables/" + table_name + '.json'):
-                    return 'TABLE NOT FOUND'
+                # print("./tables/" + table_name + '.json')
+                if not os.path.exists("./tables"):
+                    return 'NO tables DIRECTORY'
+                list_of_tables = os.listdir("./tables")
+                if table_name + '.json' not in list_of_tables:
+                    print('TABLE ' + table_name + ' NOT FOUND')
                 with open("./tables/" + table_name + '.json', 'r') as f:
                     json_str = f.read()
                 json_to_table = json.loads(json_str)
