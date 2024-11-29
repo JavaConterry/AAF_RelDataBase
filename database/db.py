@@ -8,6 +8,7 @@ from .btree import BTreeIndex
 
 class Table(dict):
     def __init__(self, table_name, columns, data=[], indexed_columns=None, column_trees=None):
+        super().__init__()
         self.__dict__ = self
         self.table_name = table_name
         self.columns = columns
@@ -20,7 +21,6 @@ class Table(dict):
 
     @staticmethod
     def from_dict(dict_):
-        """ Recursively (re)construct TreeNode-based tree from dictionary. """
         node = Table(dict_['table_name'], dict_['columns'], dict_['data'], dict_['indexed_columns'], dict_['column_trees'])
         node.column_trees = list(map(BTreeIndex.from_dict, node.column_trees))
         return node

@@ -9,7 +9,6 @@ class BTreeNode(dict):
 
     @staticmethod
     def from_dict(dict_):
-        """ Recursively (re)construct TreeNode-based tree from dictionary. """
         node = BTreeNode(dict_['degree'], dict_['keys'], dict_['children'], dict_['is_leaf'])
         node.children = list(map(BTreeNode.from_dict, node.children))
         return node
@@ -30,9 +29,8 @@ class BTreeIndex(dict):
 
     @staticmethod
     def from_dict(dict_):
-        """ Recursively (re)construct TreeNode-based tree from dictionary. """
         node = BTreeIndex(dict_['degree'], dict_['root'])
-        # node.root.children = list(map(BTreeNode.from_dict, node.root.children))
+        node.root = BTreeNode.from_dict(dict_['root'])
         return node
 
     def search(self, key, operator="="):
