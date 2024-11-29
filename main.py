@@ -1,3 +1,6 @@
+import os
+import json
+
 from database.inputparser import InputParser
 from database.db import DataBase, Table
 from database.visualizer import Visualizer
@@ -7,6 +10,22 @@ class Core():
     def __init__(self):
         db = DataBase()
         parser = InputParser()
+
+        if not os.path.isfile("./settings.json"):
+            json_str = """{\n  "autoload": ["drivers", "studeNts"]\n}"""
+            with open("./settings.json", "w") as f:
+                f.write(json_str)
+        with open("./settings.json", 'r') as f:
+            json_str = f.read()
+        json_load = json.loads(json_str)
+
+        print("Loading tables from settings...")
+        print(db.do([["LOAD"], json_load.get('autoload')]))
+        print("Done\n")
+
+        # Welcome message
+        print("Welcome to the Database!")
+
         main_input = input()
         while main_input != 'exit' and main_input != '':
             while ';' not in main_input:
