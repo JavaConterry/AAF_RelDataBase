@@ -24,9 +24,9 @@ class InputParser:
         }
         self.help_commands = {
             'HELP': "Show help",
-            'SAVE': "Save table_name [, table_name [, ...]]",
-            'LOAD': "Load table_name [, table_name [, ...]]",
-            'READ': "Read csv_file [, csv_file [, ...]]",
+            'SAVE': "Save table_name [  table_name [  ...]]",
+            'LOAD': "Load table_name [  table_name [  ...]]",
+            'READ': "Read csv_file [  csv_file [  ...]]",
             'CREATE': "CREATE table_name (column_name [INDEXED] [, ...]);",
             'INSERT': "INSERT [INTO] table_name (“value” [, ...]);",
             'SELECT': "SELECT FROM table_name [WHERE condition];",
@@ -236,31 +236,35 @@ class InputParser:
         elif isinstance(conditions[0], str):
 
             words = conditions[0].split()
+            if len(words) < 3:
+                error += f'[?] Wrong SELECT command syntax, too few arguments in WHERE clause: {conditions[0]}'
             # print(words)
-            wrong_characters = re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', words[0])
-
-            if wrong_characters != '':
-                # print(wrong_characters)
-                error += f'[?] Wrong Identifier name in: {words[0]}, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: {wrong_characters}'
-
-            double_quotes = words[-1].count('"')
-
-            column_name = " ".join(map(lambda x: x.strip(), words))
-
-            if double_quotes > 2 or double_quotes < 2:
-                error += f'[?] Wrong SELECT command syntax, {['too many', 'too few quotes'][double_quotes < 2]} in table column name: {column_name}'
-            else:
-                words[-1] = words[-1].split('"')
-
-                if words[-1][0] != '':
-                    error += f'[?] Wrong SELECT command syntax, there is a text before quotes in table column value: {column_name}'
-
-                if words[-1][-1] != '':
-                    error += f'[?] Wrong SELECT command syntax, there is a text after quotes in table column value: {column_name}'
-
-            # print(conditions)
             if not error:
-                return [words[1].strip(), words[0].strip(), words[-1][1].strip()]
+                wrong_characters = re.sub(r"""[a-zA-Z][a-zA-Z0-9_]*""", '', words[0])
+
+                if wrong_characters != '':
+                    # print(wrong_characters)
+                    error += f'[?] Wrong Identifier name in: {words[0]}, must be in the form [a-zA-Z][a-zA-Z0-9_]*, received error in: {wrong_characters}'
+                for i in range(3, len(words)):
+                    words[2] += ' ' + words[i]
+                double_quotes = words[2].count('"')
+
+                column_name = " ".join(map(lambda x: x.strip(), words))
+
+                if double_quotes > 2 or double_quotes < 2:
+                    error += f'[?] Wrong SELECT command syntax, {['too many', 'too few quotes'][double_quotes < 2]} in table column name: {column_name}'
+                else:
+                    words[2] = words[2].split('"')
+
+                    if words[2][0] != '':
+                        error += f'[?] Wrong SELECT command syntax, there is a text before quotes in table column value: {column_name}'
+
+                    if words[2][2] != '':
+                        error += f'[?] Wrong SELECT command syntax, there is a text after quotes in table column value: {column_name}'
+
+                # print(conditions)
+                if not error:
+                    return [words[1].strip(), words[0].strip(), words[2][1].strip()]
         elif len(conditions) == 1:
             return [self._create_conditions(conditions[0], error)]
         # print(conditions)
