@@ -1,17 +1,55 @@
+import os
+import json
+
+import pandas as pd
+
 from .btree import BTreeIndex
 
 
-class Table:
-    def __init__(self, table_name, columns, indexed_columns=None):
+class Table(dict):
+    def __init__(self, table_name, columns, data=[], indexed_columns=None, column_trees=None):
+        super().__init__()
+        self.__dict__ = self
         self.table_name = table_name
         self.columns = columns
-        self.data = []
+        self.data = data
         self.indexed_columns = indexed_columns
-        self.column_trees = [BTreeIndex() for _ in range(len(indexed_columns))] if indexed_columns is not None else None
+        if column_trees is not None:
+            self.column_trees = column_trees
+        else:
+            self.column_trees = [BTreeIndex() for _ in range(len(indexed_columns))] if indexed_columns is not None else None
+
+    @staticmethod
+    def from_dict(dict_):
+        node = Table(dict_['table_name'], dict_['columns'], dict_['data'], dict_['indexed_columns'], dict_['column_trees'])
+        node.column_trees = list(map(BTreeIndex.from_dict, node.column_trees))
+        return node
+
+    @staticmethod
+    def from_csv(file_path):
+        data = pd.read_csv(file_path)
+        table_name = file_path.split(".")[0]
+
+        columns = data.columns.to_list()
+        indexed_columns = None
+        for col_index in range(len(columns)):
+            if "INDEXED" in columns[col_index].upper():
+                columns[col_index] = columns[col_index].replace("INDEXED", "").strip()
+                if indexed_columns is None:
+                    indexed_columns = [columns[col_index]]
+                else:
+                    indexed_columns.append(columns[col_index])
+            columns[col_index] = columns[col_index].strip()
+
+        data = [list(map(str, row)) for row in data.values]
+        table = Table(table_name, columns, [], indexed_columns=indexed_columns)
+        for data_unit in data:
+            table.insert(data_unit)
+        return table
 
     # can be too slow, needs approvement
     def __equivalent_table_from_data(self, data):
-        new_table = Table(self.table_name, self.columns, indexed_columns=self.indexed_columns)
+        new_table = Table(self.table_name, self.columns, [], indexed_columns=self.indexed_columns)
         for data_unit in data:
             new_table.insert(data_unit)
         return new_table
@@ -88,7 +126,7 @@ class DataBase:
 
         if (user_command[0][0] == "CREATE"):
             if self.__findtable(user_command[0][1]) is None:
-                new_table = Table(user_command[0][1], [user_command[1][i][0] for i in range(len(user_command[1]))],
+                new_table = Table(user_command[0][1], [user_command[1][i][0] for i in range(len(user_command[1]))], [],
                                 [user_command[1][i][0] for i in range(len(user_command[1])) if user_command[1][i][1]])
                 self.tables.append(new_table)
                 return 'COMMAND IS EXECUTED'
@@ -114,4 +152,38 @@ class DataBase:
                     table.insert(user_command[1])
                 else:
                     return 'WRONG NUMBER OF ARGUMENTS'
+            return 'COMMAND IS EXECUTED'
+
+        elif (user_command[0][0] == 'SAVE'):
+            for table_name in user_command[1]:
+                table = self.__findtable(table_name)
+                if (table is None):
+                    return 'TABLE NOT FOUND'
+                else:
+                    json_str = json.dumps(table, indent=2)
+                    if not os.path.exists("./tables"):
+                        os.makedirs("./tables")
+                    with open("./tables/" + table_name + '.json', 'w') as f:
+                        f.write(json_str)
+            return 'COMMAND IS EXECUTED'
+
+        elif (user_command[0][0] == 'LOAD'):
+            for table_name in user_command[1]:
+                # print("./tables/" + table_name + '.json')
+                if not os.path.exists("./tables"):
+                    return 'NO tables DIRECTORY'
+                list_of_tables = os.listdir("./tables")
+                if table_name + '.json' not in list_of_tables:
+                    print('TABLE ' + table_name + ' NOT FOUND')
+                with open("./tables/" + table_name + '.json', 'r') as f:
+                    json_str = f.read()
+                json_to_table = json.loads(json_str)
+                pyobj = Table.from_dict(json_to_table)
+                self.tables.append(pyobj)
+            return 'COMMAND IS EXECUTED'
+
+        elif (user_command[0][0] == 'READ'):
+            for csv_file in user_command[1]:
+                table = Table.from_csv(csv_file)
+                self.tables.append(table)
             return 'COMMAND IS EXECUTED'

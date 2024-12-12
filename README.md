@@ -3,15 +3,15 @@
 ---
 
 1. First
-CREATE table (name, age INDEXED, team);  
-INSERT table ("Max Verstappen", "27", "ORBR");  
-INSERT table ("Charles Leclerc", "27", "Ferrari");  
-INSERT table ("Carlos Sainz", "30", "Ferrari");  
-INSERT table ("Lewis Hamilton", "39", "Mercedes");  
-INSERT table ("George Russell", "26", "Mercedes");  
-INSERT table ("Oscar Piastri", "23", "McLaren");  
-INSERT table ("Lando Norris", "25", "McLaren");  
-SELECT FROM table WHERE ((age > "26") AND (age < "28")) OR (team = "McLaren");  
+CREATE drivers (name, age INDEXED, team);  
+INSERT drivers ("Max Verstappen", "27", "ORBR");  
+INSERT drivers ("Charles Leclerc", "27", "Ferrari");  
+INSERT drivers ("Carlos Sainz", "30", "Ferrari");  
+INSERT drivers ("Lewis Hamilton", "39", "Mercedes");  
+INSERT drivers ("George Russell", "26", "Mercedes");  
+INSERT drivers ("Oscar Piastri", "23", "McLaren");  
+INSERT drivers ("Lando Norris", "25", "McLaren");  
+SELECT FROM drivers WHERE ((age > "26") AND (age < "28")) OR (team = "McLaren");  
 
 ---
 
