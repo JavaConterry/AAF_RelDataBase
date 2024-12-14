@@ -62,6 +62,7 @@ class AVLTree:
 		return content
 
 	def insert(self,value, data=[]):
+		# print(value, data)
 		if self.root==None:
 			self.root=node(value, data)
 		else:
@@ -84,8 +85,7 @@ class AVLTree:
 				self._insert(value,cur_node.right_child, data)
 		else:
 			cur_node.repeated.append(data) ## added for multiple entries
-			print("Value already in tree!")
-			print(cur_node.repeated)
+			# print("Value already in tree!")
 
 	def print_tree(self):
 		if self.root!=None:
@@ -332,6 +332,7 @@ class AVLTree:
 		right=self.get_height(cur_node.right_child)
 		return cur_node.left_child if left>=right else cur_node.right_child
 
+	# Required methods for DataBase realisation
 	def _get_node_data(self, node):
 		res = []
 		res.append(node.data)
@@ -343,54 +344,96 @@ class AVLTree:
 		res = self._get_node_data(node)
 		return res
 	
-	# def _data_from_subtree(self, node):
-	# 	if node is None: return []
-	# 	ret = []
-	# 	if node.left_child is not None:
-	# 		ret.extend(self._data_from_subtree(node.left_child))
-	# 	ret.extend(self._get_node_data(node))
-	# 	if node.right_child is not None:
-	# 		ret.extend(self._data_from_subtree(node.right_child))
-	# 	return ret
-
-	# def bigger(self, value):
-	# 	node = self.find(value)
-	# 	return self._data_from_subtree(node.right_child)
+	def min(self, n):
+		current=n
+		while current.left_child!=None:
+			current=current.left_child
+		return current
 	
-	# def smaller(self, value):
-	# 	node = self.find(value)
-	# 	return self._data_from_subtree(node.left_child)
+	def max(self, n):
+		current=n
+		while current.right_child!=None:
+			current=current.right_child
+		return current
+
+	def next(self, node):
+		if node.right_child is not None:
+			return self.min(node.right_child)
+		a = node
+		while a is not None and a.value <= node.value:
+			a = a.parent
+		return a
+	
+	def prev(self, node):
+		if node.left_child is not None:
+			return self.max(node.left_child)
+		a = node
+		while a is not None and a.value >= node.value:
+			a = a.parent
+		return a
+		
+	def _bigger_nodes(self, node, acc=[], inp=False):
+		if node is None:
+			return acc
+		else: 
+			if not inp:
+				acc.extend(self._get_node_data(node))
+			return self._bigger_nodes(self.next(node), acc)
 
 
+	def bigger_than(self, value):
+		node = self.find(value)
+		return self._bigger_nodes(node, inp=True)
+	
+	def _smaller_nodes(self, node, acc=[], inp=False):
+		if node is None:
+			return acc
+		else: 
+			if not inp:
+				acc.extend(self._get_node_data(node))
+			return self._smaller_nodes(self.prev(node), acc)
+			
+	def smaller_than(self, value):
+		node = self.find(value)
+		return self._smaller_nodes(node, inp=True)
+	
+	def search(self, key, operator="="):
+		if operator == "=":
+			return self.exact(key)
+		elif operator == "<":
+			return self.smaller_than(key)
+		elif operator == ">":
+			return self.bigger_than(key)
 
-tree = AVLTree()
-tree.insert(8, ['ss', 'ddd', 'rrrr'])
-tree.insert(4, ['4', 'data1', 'data2'])
-tree.insert(8, ['ss', 'dee', 'rr'])
-tree.insert(2, ['2', 'data1', 'data2'])
-tree.insert(8, ['ss', 'dee', 'reee'])
-tree.insert(8, ['kk', 'mm', 'feeee'])
-tree.insert(1, ['1', 'data1', 'data2'])
-tree.insert(9)
-tree.print_tree()
 
-# print(tree.exact(8))
-# print(tree.smaller(8))
+# tree = AVLTree()
+# tree.insert(27, ['Max Verstappen', '27', 'ORBR'])
+# tree.insert(27, ['Charles Leclerc', '27', 'Ferrari'])
+# tree.insert(30, ['Carlos Sainz', '30', 'Ferrari'])
+# tree.insert(39, ['Lewis Hamilton', '39', 'Mercedes'])
+# tree.insert(26, ['George Russell', '26', 'Mercedes'])
+# tree.insert(23, ['Oscar Piastri', '23', 'McLaren'])
+# tree.insert(25, ['Lando Norris', '25', 'McLaren'])
+# tree.print_tree()
 
-def AVLnodes(height):
+# print(tree.exact(26))
+# print(tree.bigger_than(26))
+# print(tree.smaller_than(26))
+
+# def AVLnodes(height):
      
-    # Base Conditions
-    if (height == 0):
-        return 1
-    elif (height == 1):
-        return 2
+#     # Base Conditions
+#     if (height == 0):
+#         return 1
+#     elif (height == 1):
+#         return 2
  
-    # Recursive function call
-    # for the recurrence relation
-    return (1 + AVLnodes(height - 1) +
-                AVLnodes(height - 2))
+#     # Recursive function call
+#     # for the recurrence relation
+#     return (1 + AVLnodes(height - 1) +
+#                 AVLnodes(height - 2))
  
-# Driver Code
-if __name__ == '__main__':
-    H = 2
-    print(AVLnodes(H))
+# # Driver Code
+# if __name__ == '__main__':
+#     H = 2
+#     print(AVLnodes(H))

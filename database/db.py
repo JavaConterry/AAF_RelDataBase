@@ -1,4 +1,5 @@
-from .btree import BTreeIndex
+# from .btree import BTreeIndex
+from .avl import AVLTree
 
 
 class Table:
@@ -7,7 +8,8 @@ class Table:
         self.columns = columns
         self.data = []
         self.indexed_columns = indexed_columns
-        self.column_trees = [BTreeIndex() for _ in range(len(indexed_columns))] if indexed_columns is not None else None
+        # self.column_trees = [BTreeIndex() for _ in range(len(indexed_columns))] if indexed_columns is not None else None
+        self.column_trees = [AVLTree() for _ in range(len(indexed_columns))] if indexed_columns is not None else None
 
     # can be too slow, needs approvement
     def __equivalent_table_from_data(self, data):
@@ -25,6 +27,10 @@ class Table:
                 self.column_trees[i].insert(key, data)
 
     def aand(self, table):
+        print("DATA 1")
+        print(self.data)
+        print("DATA 2")
+        print(table.data)
         intersection_data = [x for x in self.data if x in table.data]
         return self.__equivalent_table_from_data(intersection_data)
 
