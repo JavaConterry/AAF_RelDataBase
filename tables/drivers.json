@@ -1,0 +1,147 @@
+{
+  "table_name": "drivers",
+  "columns": [
+    "name",
+    "age",
+    "team"
+  ],
+  "data": [
+    [
+      "Max Verstappen",
+      "27",
+      "ORBR"
+    ],
+    [
+      "Charles Leclerc",
+      "27",
+      "Ferrari"
+    ],
+    [
+      "Carlos Sainz",
+      "30",
+      "Ferrari"
+    ],
+    [
+      "Lewis Hamilton",
+      "39",
+      "Mercedes"
+    ],
+    [
+      "George Russell",
+      "26",
+      "Mercedes"
+    ],
+    [
+      "Oscar Piastri",
+      "23",
+      "McLaren"
+    ],
+    [
+      "Lando Norris",
+      "25",
+      "McLaren"
+    ]
+  ],
+  "indexed_columns": [
+    "age"
+  ],
+  "column_trees": [
+    {
+      "root": {
+        "degree": 2,
+        "keys": [
+          [
+            "26",
+            [
+              [
+                "George Russell",
+                "26",
+                "Mercedes"
+              ]
+            ]
+          ],
+          [
+            "30",
+            [
+              [
+                "Carlos Sainz",
+                "30",
+                "Ferrari"
+              ]
+            ]
+          ]
+        ],
+        "children": [
+          {
+            "degree": 2,
+            "keys": [
+              [
+                "23",
+                [
+                  [
+                    "Oscar Piastri",
+                    "23",
+                    "McLaren"
+                  ]
+                ]
+              ],
+              [
+                "25",
+                [
+                  [
+                    "Lando Norris",
+                    "25",
+                    "McLaren"
+                  ]
+                ]
+              ]
+            ],
+            "children": [],
+            "is_leaf": true
+          },
+          {
+            "degree": 2,
+            "keys": [
+              [
+                "27",
+                [
+                  [
+                    "Max Verstappen",
+                    "27",
+                    "ORBR"
+                  ],
+                  [
+                    "Charles Leclerc",
+                    "27",
+                    "Ferrari"
+                  ]
+                ]
+              ]
+            ],
+            "children": [],
+            "is_leaf": true
+          },
+          {
+            "degree": 2,
+            "keys": [
+              [
+                "39",
+                [
+                  [
+                    "Lewis Hamilton",
+                    "39",
+                    "Mercedes"
+                  ]
+                ]
+              ]
+            ],
+            "children": [],
+            "is_leaf": true
+          }
+        ],
+        "is_leaf": false
+      },
+      "degree": 2
+    }
+  ]
+}
