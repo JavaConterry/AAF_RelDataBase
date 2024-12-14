@@ -122,6 +122,7 @@ class AVLTree:
 			return self._find(value,cur_node.left_child)
 		elif value>cur_node.value and cur_node.right_child!=None:
 			return self._find(value,cur_node.right_child)
+		return "Not Found"
 
 	def delete_value(self,value):
 		return self.delete_node(self.find(value))
@@ -372,6 +373,7 @@ class AVLTree:
 			a = a.parent
 		return a
 		
+
 	def _bigger_nodes(self, node, acc=[], inp=False):
 		if node is None:
 			return acc
@@ -383,7 +385,15 @@ class AVLTree:
 
 	def bigger_than(self, value):
 		node = self.find(value)
-		return self._bigger_nodes(node, inp=True)
+		if(node == "Not Found"):
+			self.insert(value)
+			node = self.find(value)
+			ret = self._bigger_nodes(node, inp=True)
+			self.delete_value(value)
+		else:
+			ret = self._bigger_nodes(node, inp=True)
+		
+		return ret
 	
 	def _smaller_nodes(self, node, acc=[], inp=False):
 		if node is None:
@@ -395,7 +405,14 @@ class AVLTree:
 			
 	def smaller_than(self, value):
 		node = self.find(value)
-		return self._smaller_nodes(node, inp=True)
+		if(node == "Not Found"):
+			self.insert(value)
+			node = self.find(value)
+			ret = self._smaller_nodes(node, inp=True)
+			self.delete_value(value)
+		else:
+			ret = self._smaller_nodes(node, inp=True)
+		return ret
 	
 	def search(self, key, operator="="):
 		if operator == "=":

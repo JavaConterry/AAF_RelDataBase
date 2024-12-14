@@ -27,16 +27,13 @@ class Table:
                 self.column_trees[i].insert(key, data)
 
     def aand(self, table):
-        print("DATA 1")
-        print(self.data)
-        print("DATA 2")
-        print(table.data)
         intersection_data = [x for x in self.data if x in table.data]
         return self.__equivalent_table_from_data(intersection_data)
 
     def oor(self, table):
         union_data = []
         concat = self.data + table.data
+
         for x in concat:
             if x not in union_data:
                 union_data.append(x)
