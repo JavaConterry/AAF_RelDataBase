@@ -1,4 +1,5 @@
-from .btree import BTreeIndex
+# from .btree import BTreeIndex
+from .avl import AVLTree
 
 
 class Table:
@@ -7,7 +8,8 @@ class Table:
         self.columns = columns
         self.data = []
         self.indexed_columns = indexed_columns
-        self.column_trees = [BTreeIndex() for _ in range(len(indexed_columns))] if indexed_columns is not None else None
+        # self.column_trees = [BTreeIndex() for _ in range(len(indexed_columns))] if indexed_columns is not None else None
+        self.column_trees = [AVLTree() for _ in range(len(indexed_columns))] if indexed_columns is not None else None
 
     # can be too slow, needs approvement
     def __equivalent_table_from_data(self, data):
@@ -31,6 +33,7 @@ class Table:
     def oor(self, table):
         union_data = []
         concat = self.data + table.data
+
         for x in concat:
             if x not in union_data:
                 union_data.append(x)
