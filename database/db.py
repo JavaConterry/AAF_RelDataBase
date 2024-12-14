@@ -1,9 +1,12 @@
+
 import os
 import json
 
 import pandas as pd
 
 from .btree import BTreeIndex
+from .avl import AVLTree
+
 
 
 class Table(dict):
@@ -14,10 +17,11 @@ class Table(dict):
         self.columns = columns
         self.data = data
         self.indexed_columns = indexed_columns
+
         if column_trees is not None:
             self.column_trees = column_trees
         else:
-            self.column_trees = [BTreeIndex() for _ in range(len(indexed_columns))] if indexed_columns is not None else None
+            self.column_trees = [AVLTree() for _ in range(len(indexed_columns))] if indexed_columns is not None else None
 
     @staticmethod
     def from_dict(dict_):
@@ -47,6 +51,7 @@ class Table(dict):
             table.insert(data_unit)
         return table
 
+
     # can be too slow, needs approvement
     def __equivalent_table_from_data(self, data):
         new_table = Table(self.table_name, self.columns, [], indexed_columns=self.indexed_columns)
@@ -69,6 +74,7 @@ class Table(dict):
     def oor(self, table):
         union_data = []
         concat = self.data + table.data
+
         for x in concat:
             if x not in union_data:
                 union_data.append(x)
