@@ -190,11 +190,14 @@ class DataBase:
                 if table_name + '.json' not in list_of_tables:
                     print('TABLE ' + table_name + ' NOT FOUND')
                 else:
-                    if self.__findtable(table_name) is not None:
+                    table = self.__findtable(table_name)
+                    if table is not None:
                         print('TABLE ' + table_name + ' ALREADY EXISTS')
                         rewrite = input("Rewrite? (y/n) ")
                         if rewrite.lower() != 'y':
                             return 'COMMAND IS EXECUTED'
+                        else:
+                            self.tables.remove(table)
                     with open("./tables/" + table_name + '.json', 'r') as f:
                         json_str = f.read()
                     json_to_table = json.loads(json_str)
