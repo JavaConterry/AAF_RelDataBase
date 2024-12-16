@@ -1,5 +1,4 @@
 
-from ntpath import isfile
 import os
 import json
 
