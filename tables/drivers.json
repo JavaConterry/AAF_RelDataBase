@@ -46,6 +46,8 @@
     "age"
   ],
   "column_trees": [
-    {}
+    {
+      "root": null
+    }
   ]
 }

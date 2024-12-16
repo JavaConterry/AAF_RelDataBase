@@ -376,7 +376,9 @@ class AVLTree(dict):
 		return a
 		
 
-	def _bigger_nodes(self, node, acc=[], inp=False):
+	def _bigger_nodes(self, node, acc=None, inp=False):
+		if acc is None:
+			acc = []
 		if node is None:
 			return acc
 		else: 
@@ -390,14 +392,16 @@ class AVLTree(dict):
 		if(node == "Not Found"):
 			self.insert(value)
 			node = self.find(value)
-			ret = self._bigger_nodes(node, inp=True)
+			ret = self._bigger_nodes(node, acc = None ,inp=True)
 			self.delete_value(value)
 		else:
-			ret = self._bigger_nodes(node, inp=True)
+			ret = self._bigger_nodes(node, acc = None, inp=True)
 		
 		return ret
 	
-	def _smaller_nodes(self, node, acc=[], inp=False):
+	def _smaller_nodes(self, node, acc=None, inp=False):
+		if acc is None:
+			acc = []
 		if node is None:
 			return acc
 		else: 
@@ -410,10 +414,10 @@ class AVLTree(dict):
 		if(node == "Not Found"):
 			self.insert(value)
 			node = self.find(value)
-			ret = self._smaller_nodes(node, inp=True)
+			ret = self._smaller_nodes(node,acc = None, inp=True)
 			self.delete_value(value)
 		else:
-			ret = self._smaller_nodes(node, inp=True)
+			ret = self._smaller_nodes(node,acc = None, inp=True)
 		return ret
 	
 	def search(self, key, operator="="):
