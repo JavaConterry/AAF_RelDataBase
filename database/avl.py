@@ -8,8 +8,10 @@ class node:
 		self.data=data
 		self.repeated = []
 
-class AVLTree:
+class AVLTree(dict):
 	def __init__(self):
+		super().__init__()
+		self.__dict__ = self
 		self.root=None
 
 	def __repr__(self):

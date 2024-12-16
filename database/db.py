@@ -4,18 +4,21 @@ import json
 
 import pandas as pd
 
-from .btree import BTreeIndex
+from .deprecated.btree import BTreeIndex
 from .avl import AVLTree
 
 
 
 class Table(dict):
-    def __init__(self, table_name, columns, data=[], indexed_columns=None, column_trees=None):
+    def __init__(self, table_name, columns, data=None, indexed_columns=None, column_trees=None):
         super().__init__()
         self.__dict__ = self
         self.table_name = table_name
         self.columns = columns
-        self.data = data
+        if data is None:
+            self.data = []
+        else:
+            self.data = data
         self.indexed_columns = indexed_columns
 
         if column_trees is not None:
@@ -26,7 +29,7 @@ class Table(dict):
     @staticmethod
     def from_dict(dict_):
         node = Table(dict_['table_name'], dict_['columns'], dict_['data'], dict_['indexed_columns'], dict_['column_trees'])
-        node.column_trees = list(map(BTreeIndex.from_dict, node.column_trees))
+        # node.column_trees = list(map(AVLTree.from_dict, node.column_trees))
         return node
 
     @staticmethod
@@ -46,7 +49,7 @@ class Table(dict):
             columns[col_index] = columns[col_index].strip()
 
         data = [list(map(str, row)) for row in data.values]
-        table = Table(table_name, columns, [], indexed_columns=indexed_columns)
+        table = Table(table_name, columns, indexed_columns=indexed_columns)
         for data_unit in data:
             table.insert(data_unit)
         return table
@@ -54,7 +57,7 @@ class Table(dict):
 
     # can be too slow, needs approvement
     def __equivalent_table_from_data(self, data):
-        new_table = Table(self.table_name, self.columns, [], indexed_columns=self.indexed_columns)
+        new_table = Table(self.table_name, self.columns, indexed_columns=self.indexed_columns)
         for data_unit in data:
             new_table.insert(data_unit)
         return new_table
@@ -132,7 +135,7 @@ class DataBase:
 
         if (user_command[0][0] == "CREATE"):
             if self.__findtable(user_command[0][1]) is None:
-                new_table = Table(user_command[0][1], [user_command[1][i][0] for i in range(len(user_command[1]))], [],
+                new_table = Table(user_command[0][1], [user_command[1][i][0] for i in range(len(user_command[1]))], None,
                                 [user_command[1][i][0] for i in range(len(user_command[1])) if user_command[1][i][1]])
                 self.tables.append(new_table)
                 return 'COMMAND IS EXECUTED'
@@ -166,9 +169,13 @@ class DataBase:
                 if (table is None):
                     return 'TABLE NOT FOUND'
                 else:
-                    json_str = json.dumps(table, indent=2)
                     if not os.path.exists("./tables"):
                         os.makedirs("./tables")
+                    if table.column_trees == []:
+                        json_str = json.dumps(table, indent=2)
+                    else:
+                        table_without_column_trees = Table(table.table_name, table.columns, table.data, table.indexed_columns)
+                        json_str = json.dumps(table_without_column_trees, indent=2)
                     with open("./tables/" + table_name + '.json', 'w') as f:
                         f.write(json_str)
             return 'COMMAND IS EXECUTED'
@@ -181,11 +188,28 @@ class DataBase:
                 list_of_tables = os.listdir("./tables")
                 if table_name + '.json' not in list_of_tables:
                     print('TABLE ' + table_name + ' NOT FOUND')
-                with open("./tables/" + table_name + '.json', 'r') as f:
-                    json_str = f.read()
-                json_to_table = json.loads(json_str)
-                pyobj = Table.from_dict(json_to_table)
-                self.tables.append(pyobj)
+                else:
+                    table = self.__findtable(table_name)
+                    if table is not None:
+                        print('TABLE ' + table_name + ' ALREADY EXISTS')
+                        rewrite = input("Rewrite? (y/n) ")
+                        if rewrite.lower() != 'y':
+                            return 'COMMAND IS EXECUTED'
+                        else:
+                            self.tables.remove(table)
+                    with open("./tables/" + table_name + '.json', 'r') as f:
+                        json_str = f.read()
+                    json_to_table = json.loads(json_str)
+                    table = Table.from_dict(json_to_table)
+                    ind_col = table.indexed_columns
+                    if ind_col:
+                        table.column_trees = [AVLTree() for _ in range(len(ind_col))]
+                        for i in range(len(ind_col)):
+                            for row in table.data:
+                                col = table.columns.index(ind_col[i])
+                                key = row[col]
+                                table.column_trees[i].insert(key, row)
+                    self.tables.append(table)
             return 'COMMAND IS EXECUTED'
 
         elif (user_command[0][0] == 'READ'):
