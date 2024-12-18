@@ -1,0 +1,53 @@
+{
+  "table_name": "drivers",
+  "columns": [
+    "name",
+    "age",
+    "team"
+  ],
+  "data": [
+    [
+      "Max Verstappen",
+      "27",
+      "ORBR"
+    ],
+    [
+      "Charles Leclerc",
+      "27",
+      "Ferrari"
+    ],
+    [
+      "Carlos Sainz",
+      "30",
+      "Ferrari"
+    ],
+    [
+      "Lewis Hamilton",
+      "39",
+      "Mercedes"
+    ],
+    [
+      "George Russell",
+      "26",
+      "Mercedes"
+    ],
+    [
+      "Oscar Piastri",
+      "23",
+      "McLaren"
+    ],
+    [
+      "Lando Norris",
+      "25",
+      "McLaren"
+    ]
+  ],
+  "indexed_columns": [
+    "age"
+  ],
+  "column_trees": [
+    {
+      "root": null
+    }
+  ]
+}
